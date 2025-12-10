@@ -8,6 +8,8 @@ import Home from "@/pages/home";
 import ReportFound from "@/pages/report-found";
 import ReportLost from "@/pages/report-lost";
 import PaymentPage from "@/pages/payment";
+import SearchPage from "@/pages/search";
+import ItemDetail from "@/pages/item-detail";
 
 function Router() {
   return (
@@ -16,6 +18,8 @@ function Router() {
       <Route path="/report-found" component={ReportFound} />
       <Route path="/report-lost" component={ReportLost} />
       <Route path="/payment" component={PaymentPage} />
+      <Route path="/search" component={SearchPage} />
+      <Route path="/item/:id" component={ItemDetail} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
