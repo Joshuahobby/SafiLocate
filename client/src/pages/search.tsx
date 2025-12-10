@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 
+import { ItemCard } from "@/components/item-card";
+
 // Mock Data Generation
 const generateMockItems = (count: number) => {
   return Array.from({ length: count }).map((_, i) => ({
@@ -52,7 +54,7 @@ const generateMockItems = (count: number) => {
     category: ["electronics", "wallet", "id_document", "keys", "other", "electronics", "id_document", "other"][i % 8],
     location: ["Kigali, Nyarugenge", "Kicukiro Centre", "Remera, Gasabo", "Kimironko Market", "Nyamirambo", "Gisozi", "Kanombe", "Kacyiru"][i % 8],
     date: new Date(Date.now() - Math.floor(Math.random() * 1000000000)).toLocaleDateString(),
-    type: i % 3 === 0 ? "lost" : "found",
+    type: (i % 3 === 0 ? "lost" : "found") as "lost" | "found",
     image: null
   }));
 };
@@ -202,61 +204,21 @@ export default function SearchPage() {
             </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredItems.map((item) => (
-            <Link key={item.id} href={`/item/${item.id}`}>
-              <div className="group bg-card rounded-xl border shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer h-full flex flex-col">
-                <div className="aspect-[4/3] bg-muted relative overflow-hidden">
-                  <div className="absolute top-2 right-2 z-10">
-                    <span className={`
-                      inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium shadow-sm
-                      ${item.type === 'found' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
-                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100'}
-                    `}>
-                      {item.type === 'found' ? 'Found' : 'Lost'}
-                    </span>
-                  </div>
-                  
-                  {/* Placeholder Image State */}
-                  <div className="w-full h-full flex items-center justify-center bg-secondary/30 text-muted-foreground group-hover:scale-105 transition-transform duration-500">
-                    {getCategoryIcon(item.category)}
-                  </div>
-                </div>
-                
-                <div className="p-4 flex-1 flex flex-col">
-                  <h3 className="font-semibold text-lg line-clamp-1 mb-1 group-hover:text-primary transition-colors">
-                    {item.title}
-                  </h3>
-                  
-                  <div className="space-y-2 mt-auto">
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <MapPin className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                      <span className="truncate">{item.location}</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between pt-3 border-t">
-                      <span className="text-xs text-muted-foreground flex items-center">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        {item.date}
-                      </span>
-                      <span className="text-xs font-medium text-primary flex items-center">
-                        View Details <ArrowRight className="w-3 h-3 ml-1" />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Link>
+            <ItemCard 
+              key={item.id}
+              {...item}
+            />
           ))}
           
           {filteredItems.length === 0 && (
-            <div className="col-span-full py-12 text-center text-muted-foreground">
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                <SearchIcon className="w-8 h-8 opacity-50" />
+            <div className="col-span-full py-20 text-center text-muted-foreground">
+              <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                <SearchIcon className="w-10 h-10 opacity-50" />
               </div>
-              <h3 className="text-lg font-medium text-foreground">No items found</h3>
-              <p>Try adjusting your search or filters</p>
+              <h3 className="text-xl font-heading font-semibold text-foreground mb-2">No items found</h3>
+              <p>Try adjusting your search or filters to see more results.</p>
             </div>
           )}
         </div>
@@ -265,13 +227,4 @@ export default function SearchPage() {
   );
 }
 
-function getCategoryIcon(category: string) {
-  switch (category) {
-    case 'electronics': return <Smartphone className="w-12 h-12 opacity-20" />;
-    case 'wallet': return <Wallet className="w-12 h-12 opacity-20" />;
-    case 'id_document': return <FileText className="w-12 h-12 opacity-20" />;
-    case 'keys': return <Key className="w-12 h-12 opacity-20" />;
-    case 'clothing': return <Shirt className="w-12 h-12 opacity-20" />;
-    default: return <MoreHorizontal className="w-12 h-12 opacity-20" />;
-  }
-}
+// Remove getCategoryIcon function as it is now in ItemCard component

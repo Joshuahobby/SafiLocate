@@ -7,29 +7,24 @@ import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { 
   ArrowLeft, 
-  Camera, 
-  CheckCircle2, 
   MapPin, 
   Tag, 
   User, 
   Loader2, 
   ChevronRight,
-  Search,
   Check,
-  Phone
+  Phone,
+  Smartphone,
+  Wallet,
+  FileText,
+  Key,
+  Shirt,
+  MoreHorizontal
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ImageUpload } from "@/components/image-upload";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -42,7 +37,7 @@ const foundItemSchema = z.object({
   description: z.string().min(10, "Please provide more detail"),
   location: z.string().min(3, "Location is required"),
   dateFound: z.string().min(1, "Date is required"),
-  imageUrl: z.string().optional(), // Using string for base64/url for MVP
+  imageUrl: z.string().optional(),
   contactPhone: z.string().min(10, "Valid phone number required").regex(/^(\+?250|0)7[0-9]{8}$/, "Must be a valid Rwanda phone number"),
   contactName: z.string().min(2, "Name is required"),
 });
@@ -50,9 +45,18 @@ const foundItemSchema = z.object({
 type FormData = z.infer<typeof foundItemSchema>;
 
 const STEPS = [
-  { id: 'details', title: 'Item Details', icon: Tag },
-  { id: 'location', title: 'Location & Photo', icon: MapPin },
-  { id: 'contact', title: 'Contact Info', icon: User },
+  { id: 'details', title: 'What did you find?', icon: Tag },
+  { id: 'location', title: 'Where & When?', icon: MapPin },
+  { id: 'contact', title: 'Your Details', icon: User },
+];
+
+const CATEGORIES = [
+  { id: "id_document", label: "ID / Passport", icon: FileText },
+  { id: "electronics", label: "Electronics", icon: Smartphone },
+  { id: "wallet", label: "Wallet / Purse", icon: Wallet },
+  { id: "keys", label: "Keys", icon: Key },
+  { id: "clothing", label: "Clothing", icon: Shirt },
+  { id: "other", label: "Other Item", icon: MoreHorizontal },
 ];
 
 export default function ReportFound() {
@@ -80,8 +84,8 @@ export default function ReportFound() {
   const nextStep = async () => {
     let fieldsToValidate: (keyof FormData)[] = [];
     
-    if (step === 0) fieldsToValidate = ['category', 'title', 'description', 'dateFound'];
-    if (step === 1) fieldsToValidate = ['location', 'imageUrl'];
+    if (step === 0) fieldsToValidate = ['category', 'title', 'description'];
+    if (step === 1) fieldsToValidate = ['location', 'dateFound', 'imageUrl'];
     if (step === 2) fieldsToValidate = ['contactName', 'contactPhone'];
 
     const isValid = await form.trigger(fieldsToValidate);
@@ -95,13 +99,12 @@ export default function ReportFound() {
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
     setSubmittedData(data);
     setIsSubmitting(false);
     toast({
-      title: "Item Reported Successfully",
-      description: "Thank you for helping the community!",
+      title: "Report Submitted",
+      description: "Thank you for being a good citizen!",
     });
   };
 
@@ -109,39 +112,35 @@ export default function ReportFound() {
   if (submittedData) {
     return (
       <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full p-8 text-center space-y-6 animate-in zoom-in-95 duration-300">
-          <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-10 h-10" />
+        <Card className="max-w-md w-full p-8 text-center space-y-6 animate-in zoom-in-95 duration-300 border-none shadow-xl">
+          <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 ring-8 ring-emerald-50">
+            <Check className="w-12 h-12" />
           </div>
           
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-foreground">Report Submitted!</h1>
-            <p className="text-muted-foreground">
-              Thank you for reporting this found item. We have listed it in our database.
+            <h1 className="text-3xl font-heading font-bold text-foreground">Thank You!</h1>
+            <p className="text-muted-foreground text-lg">
+              You've helped make someone's day better.
             </p>
           </div>
 
-          <div className="bg-muted/50 rounded-lg p-4 text-left space-y-3 text-sm">
-            <div className="flex justify-between border-b pb-2">
+          <div className="bg-muted/30 rounded-2xl p-6 text-left space-y-4">
+            <div className="flex justify-between border-b border-border/50 pb-3">
               <span className="text-muted-foreground">Reference ID</span>
-              <span className="font-mono font-medium">#FD-{Math.floor(Math.random() * 10000)}</span>
+              <span className="font-mono font-bold text-primary">#FD-{Math.floor(Math.random() * 10000)}</span>
             </div>
-            <div className="flex justify-between border-b pb-2">
+            <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Item</span>
-              <span className="font-medium">{submittedData.title}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Category</span>
-              <span className="font-medium capitalize">{submittedData.category}</span>
+              <span className="font-medium bg-background px-3 py-1 rounded-full shadow-sm">{submittedData.title}</span>
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <Link href="/" className="flex-1">
-              <Button variant="outline" className="w-full">Return Home</Button>
+          <div className="flex flex-col gap-3 pt-4">
+            <Link href="/report-found" onClick={() => window.location.reload()} className="w-full">
+              <Button className="w-full h-12 text-base font-semibold rounded-xl shadow-lg shadow-primary/20">Report Another Item</Button>
             </Link>
-            <Link href="/report-found" onClick={() => window.location.reload()} className="flex-1">
-              <Button className="w-full">Report Another</Button>
+            <Link href="/" className="w-full">
+              <Button variant="ghost" className="w-full h-12 rounded-xl">Return Home</Button>
             </Link>
           </div>
         </Card>
@@ -150,59 +149,32 @@ export default function ReportFound() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b sticky top-0 bg-background/80 backdrop-blur-md z-10">
+    <div className="min-h-screen bg-background flex flex-col font-sans">
+      {/* Minimal Header */}
+      <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-10">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="icon" className="-ml-2">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <h1 className="font-semibold text-lg">Report Found Item</h1>
-          </div>
-          <div className="text-sm text-muted-foreground hidden sm:block">
-            Step {step + 1} of {STEPS.length}
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="-ml-2 hover:bg-muted/50 rounded-full px-4">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+          </Link>
+          <div className="flex flex-col items-end">
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">Step {step + 1} of {STEPS.length}</span>
+            <span className="text-sm font-medium text-foreground">{STEPS[step].title}</span>
           </div>
         </div>
       </header>
 
       <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
         {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between mb-2">
-            {STEPS.map((s, i) => {
-              const Icon = s.icon;
-              const isActive = i === step;
-              const isCompleted = i < step;
-
-              return (
-                <div key={s.id} className="flex flex-col items-center gap-2 flex-1">
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2",
-                    isActive && "border-primary bg-primary text-primary-foreground scale-110",
-                    isCompleted && "border-primary bg-primary/10 text-primary",
-                    !isActive && !isCompleted && "border-muted bg-muted text-muted-foreground"
-                  )}>
-                    {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
-                  </div>
-                  <span className={cn(
-                    "text-xs font-medium hidden sm:block transition-colors",
-                    isActive ? "text-primary" : "text-muted-foreground"
-                  )}>
-                    {s.title}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <div className="mb-10">
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
             <motion.div 
               className="h-full bg-primary"
               initial={{ width: "0%" }}
               animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
             />
           </div>
         </div>
@@ -215,45 +187,98 @@ export default function ReportFound() {
                 initial={{ x: 20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -20, opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: 0.3 }}
                 className="space-y-6"
               >
                 {step === 0 && (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     <FormField
                       control={form.control}
                       name="category"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>What kind of item is it?</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="h-12">
-                                <SelectValue placeholder="Select category" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="id_document">National ID / Passport</SelectItem>
-                              <SelectItem value="electronics">Phone / Laptop / Electronics</SelectItem>
-                              <SelectItem value="wallet">Wallet / Purse</SelectItem>
-                              <SelectItem value="keys">Keys</SelectItem>
-                              <SelectItem value="clothing">Clothing / Accessories</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
+                        <FormItem className="space-y-4">
+                          <FormLabel className="text-lg font-semibold">Select Category</FormLabel>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {CATEGORIES.map((cat) => (
+                              <div
+                                key={cat.id}
+                                onClick={() => field.onChange(cat.id)}
+                                className={cn(
+                                  "cursor-pointer flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 hover:scale-[1.02]",
+                                  field.value === cat.id 
+                                    ? "border-primary bg-primary/5 shadow-md" 
+                                    : "border-muted bg-card hover:border-primary/30 hover:shadow-sm"
+                                )}
+                              >
+                                <cat.icon className={cn(
+                                  "w-8 h-8 mb-3", 
+                                  field.value === cat.id ? "text-primary" : "text-muted-foreground"
+                                )} />
+                                <span className={cn(
+                                  "text-sm font-medium text-center leading-tight",
+                                  field.value === cat.id ? "text-primary" : "text-foreground"
+                                )}>{cat.label}</span>
+                              </div>
+                            ))}
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base">What exactly is it?</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. Blue Samsung Galaxy S21" className="h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base">Any details?</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Describe features like color, brand, condition, or unique marks..." 
+                                className="min-h-[120px] resize-none text-base rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all p-4" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {step === 1 && (
+                  <div className="space-y-8">
                     <FormField
                       control={form.control}
-                      name="title"
+                      name="location"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Item Title</FormLabel>
+                          <FormLabel className="text-lg font-semibold">Location</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Blue Samsung Galaxy S21" className="h-12" {...field} />
+                            <div className="relative">
+                              <MapPin className="absolute left-4 top-4 h-6 w-6 text-muted-foreground" />
+                              <Input 
+                                placeholder="Where did you find it?" 
+                                className="pl-12 h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all" 
+                                {...field} 
+                              />
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -265,52 +290,9 @@ export default function ReportFound() {
                       name="dateFound"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Date Found</FormLabel>
+                          <FormLabel className="text-lg font-semibold">Date Found</FormLabel>
                           <FormControl>
-                            <Input type="date" className="h-12" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Description</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Describe any distinguishing features (scratches, stickers, case color)..." 
-                              className="min-h-[120px] resize-none" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-
-                {step === 1 && (
-                  <div className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Where did you find it?</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <MapPin className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                              <Input 
-                                placeholder="e.g. Near Kigali Heights, Kimihurura" 
-                                className="pl-10 h-12" 
-                                {...field} 
-                              />
-                            </div>
+                            <Input type="date" className="h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -322,11 +304,15 @@ export default function ReportFound() {
                       name="imageUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Photo (Optional but Recommended)</FormLabel>
+                          <FormLabel className="text-lg font-semibold">Photo Evidence</FormLabel>
+                          <div className="mb-2 text-sm text-muted-foreground">
+                            A picture is worth a thousand words.
+                          </div>
                           <FormControl>
                             <ImageUpload 
                               value={field.value || null} 
-                              onChange={field.onChange} 
+                              onChange={field.onChange}
+                              className="bg-muted/30 border-muted-foreground/20" 
                             />
                           </FormControl>
                           <FormMessage />
@@ -337,62 +323,68 @@ export default function ReportFound() {
                 )}
 
                 {step === 2 && (
-                  <div className="space-y-6">
-                    <div className="bg-primary/5 p-4 rounded-lg border border-primary/10 flex items-start gap-3">
-                      <ShieldCheck className="w-5 h-5 text-primary mt-0.5" />
-                      <div className="text-sm">
-                        <p className="font-medium text-primary mb-1">Your privacy is protected</p>
-                        <p className="text-muted-foreground">We only share your number with verified owners who claim this item.</p>
+                  <div className="space-y-8">
+                    <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 flex gap-4">
+                      <div className="bg-blue-100 p-2 rounded-full h-fit">
+                        <User className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-blue-900 mb-1">We value your privacy</h4>
+                        <p className="text-blue-800/80 text-sm leading-relaxed">
+                          Your contact details are securely stored and only shared with verified owners who claim this item.
+                        </p>
                       </div>
                     </div>
 
-                    <FormField
-                      control={form.control}
-                      name="contactName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Your Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="John Doe" className="h-12" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="contactName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base">Your Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="John Doe" className="h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name="contactPhone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Phone className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                              <Input 
-                                type="tel" 
-                                placeholder="078 000 0000" 
-                                className="pl-10 h-12" 
-                                {...field} 
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={form.control}
+                        name="contactPhone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base">Mobile Number</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Phone className="absolute left-4 top-4 h-6 w-6 text-muted-foreground" />
+                                <Input 
+                                  type="tel" 
+                                  placeholder="078 000 0000" 
+                                  className="pl-12 h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all" 
+                                  {...field} 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
                 )}
               </motion.div>
             </AnimatePresence>
 
-            <div className="flex gap-4 pt-4 border-t">
+            <div className="flex gap-4 pt-8">
               {step > 0 && (
                 <Button 
                   type="button" 
                   variant="outline" 
                   onClick={prevStep}
-                  className="flex-1 h-12"
+                  className="flex-1 h-14 rounded-xl text-base font-medium border-border/50 bg-background hover:bg-muted"
                   disabled={isSubmitting}
                 >
                   Back
@@ -403,20 +395,20 @@ export default function ReportFound() {
                 <Button 
                   type="button" 
                   onClick={nextStep}
-                  className="flex-1 h-12"
+                  className="flex-1 h-14 rounded-xl text-base font-semibold shadow-lg shadow-primary/25"
                 >
-                  Next Step
-                  <ChevronRight className="ml-2 w-4 h-4" />
+                  Continue
+                  <ChevronRight className="ml-2 w-5 h-5" />
                 </Button>
               ) : (
                 <Button 
                   type="submit" 
-                  className="flex-1 h-12"
+                  className="flex-1 h-14 rounded-xl text-base font-semibold shadow-lg shadow-primary/25"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Submitting...
                     </>
                   ) : (
@@ -429,26 +421,5 @@ export default function ReportFound() {
         </Form>
       </main>
     </div>
-  );
-}
-
-// Helper component for the privacy note
-function ShieldCheck({ className }: { className?: string }) {
-  return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className}
-    >
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
   );
 }
