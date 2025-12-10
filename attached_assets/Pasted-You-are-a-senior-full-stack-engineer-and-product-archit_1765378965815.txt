@@ -1,0 +1,183 @@
+You are a senior full-stack engineer and product architect helping me build an MVP for a platform called SafiLocate – Smart Lost & Found Platform.
+
+I will attach a Functional Specification Document (FSD) for SafiLocate.
+Your first job is to carefully read and understand the FSD before doing anything else.
+
+1. Understand the Product
+
+Read the attached FSD for SafiLocate end-to-end.
+
+Then, in your own words, give me a short product summary covering:
+
+Main problem SafiLocate solves
+
+Target users (in Rwanda context)
+
+Core MVP user flows (lost item posting, found item posting, search, claim, payments, admin)
+
+Extract from the FSD:
+
+Explicit constraints (low budget, hosting limits, simplicity, etc.)
+
+Core non-functional requirements (performance, security, scalability)
+
+Keep this summary concise but clear.
+
+2. Choose and Justify the Tech Stack
+
+Using the requirements in the FSD and the fact that we are on Replit with a very low budget, propose a realistic tech stack:
+
+Frontend: (e.g., Next.js, React, or another framework you recommend for Replit)
+
+Backend: (e.g., Node.js + Express, Next.js API routes, or FastAPI, etc.)
+
+Database: (e.g., Replit DB, PostgreSQL on a free/low-cost provider)
+
+AI usage: how we’ll integrate LLMs minimally to keep costs low (e.g., tag generation, category normalization only)
+
+Payments: Flutterwave (or another realistic option) for:
+
+Paid lost item listings
+
+Optional tipping
+
+For each choice, briefly explain why it fits SafiLocate’s MVP and the Rwanda/low-budget context.
+
+3. Design the System Architecture
+
+Based on the FSD, propose a high-level architecture:
+
+Describe the main components:
+
+Frontend app
+
+Backend/API
+
+Database
+
+Payment integration
+
+AI integration
+
+Admin dashboard
+
+Draw a text-based architecture diagram (ASCII), showing how these components interact:
+
+User flows for:
+
+Posting a found item (free)
+
+Posting a lost item (paid)
+
+Searching & filtering
+
+Claiming an item
+
+Admin review/approval
+
+Highlight where AI is used and how to keep it cheap and simple in the MVP.
+
+4. Propose the Repository Structure
+
+Suggest a clean repo structure that fits Replit and the selected stack.
+
+Example (adapt to your chosen stack):
+
+/frontend or /app
+
+/api or /server
+
+/db (schema, migrations, seed data)
+
+/lib (shared utilities)
+
+/config (env, payment config, AI config)
+
+/tests
+
+For each top-level folder, give a one-line description of what goes inside.
+
+5. Convert the FSD into a Development Plan
+
+Now I want you to turn the FSD into a concrete, actionable development plan suitable for Vibe Coding workflows (AI-assisted coding) on Replit.
+
+Break it into phases and tasks:
+
+Phase 1 – Project Setup & Infrastructure
+
+Initialize repo and basic tooling (lint, prettier, env handling)
+
+Set up base frontend shell (layout, theme, global styles)
+
+Set up backend/API boilerplate
+
+Connect to database
+
+Prepare environment variables for payments & AI (no real secrets in code)
+
+Phase 2 – Core User Features
+
+Found item posting (free) flow
+
+Lost item posting (paid) flow
+
+Search & results pages
+
+Claim flow
+
+Phase 3 – Admin & Moderation
+
+Admin login (simple password for MVP)
+
+Admin listing management (approve/block)
+
+Basic analytics (items by category, lost vs found)
+
+Phase 4 – AI & Matching Enhancements (MVP level)
+
+Tag generation service (single cheap LLM call per item)
+
+Tags stored in DB
+
+Search endpoint updated to use tags + text matching
+
+Phase 5 – Payments & Final Polishing
+
+Integrate payment provider (e.g., Flutterwave) for:
+
+Lost item posting fee
+
+Optional tipping endpoint (stub or real)
+
+Handle callbacks & update DB
+
+Error handling, UX improvements
+
+Deployment checklist for Replit / external DB
+
+For each phase, list:
+
+The goal of the phase
+
+A numbered list of tasks
+
+Which tasks are must-have for MVP vs optional “nice-to-have”
+
+6. Output Format
+
+Return your answer in a clear structured markdown format:
+
+Product Summary
+
+Tech Stack Proposal
+
+System Architecture Overview
+
+Repo Structure
+
+Phased Development Plan with Tasks
+
+The output should be detailed enough that I can then ask you, in follow-up steps, to start implementing these tasks one by one with AI-assisted coding inside Replit.
+
+Do not start writing any actual code yet.
+In this response, focus only on planning and structuring the development of SafiLocate based strictly on the attached FSD.
