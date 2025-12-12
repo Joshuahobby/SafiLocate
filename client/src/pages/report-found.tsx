@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Tag, 
-  User, 
-  Loader2, 
+import {
+  ArrowLeft,
+  MapPin,
+  Tag,
+  User,
+  Loader2,
   ChevronRight,
   Check,
   Phone,
@@ -83,13 +85,13 @@ export default function ReportFound() {
 
   const nextStep = async () => {
     let fieldsToValidate: (keyof FormData)[] = [];
-    
+
     if (step === 0) fieldsToValidate = ['category', 'title', 'description'];
     if (step === 1) fieldsToValidate = ['location', 'dateFound', 'imageUrl'];
     if (step === 2) fieldsToValidate = ['contactName', 'contactPhone'];
 
     const isValid = await form.trigger(fieldsToValidate);
-    
+
     if (isValid) {
       setStep((s) => Math.min(s + 1, STEPS.length));
     }
@@ -97,15 +99,39 @@ export default function ReportFound() {
 
   const prevStep = () => setStep((s) => Math.max(s - 1, 0));
 
+  // ... inside component
+
+  const mutation = useMutation({
+    mutationFn: async (data: FormData) => {
+      const res = await apiRequest("POST", "/api/found-items", data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Report Submitted",
+        description: "Thank you for being a good citizen!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/items"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Submission Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setSubmittedData(data);
-    setIsSubmitting(false);
-    toast({
-      title: "Report Submitted",
-      description: "Thank you for being a good citizen!",
-    });
+    try {
+      await mutation.mutateAsync(data);
+      setSubmittedData(data);
+    } catch (e) {
+      // Error handled in onError
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Success View
@@ -116,7 +142,7 @@ export default function ReportFound() {
           <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 ring-8 ring-emerald-50">
             <Check className="w-12 h-12" />
           </div>
-          
+
           <div className="space-y-2">
             <h1 className="text-3xl font-heading font-bold text-foreground">Thank You!</h1>
             <p className="text-muted-foreground text-lg">
@@ -151,7 +177,7 @@ export default function ReportFound() {
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Minimal Header */}
-      <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-10">
+      <header className="glass-nav z-10">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/">
             <Button variant="ghost" size="sm" className="-ml-2 hover:bg-muted/50 rounded-full px-4">
@@ -170,7 +196,7 @@ export default function ReportFound() {
         {/* Progress Bar */}
         <div className="mb-10">
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <motion.div 
+            <motion.div
               className="h-full bg-primary"
               initial={{ width: "0%" }}
               animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
@@ -205,13 +231,13 @@ export default function ReportFound() {
                                 onClick={() => field.onChange(cat.id)}
                                 className={cn(
                                   "cursor-pointer flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 hover:scale-[1.02]",
-                                  field.value === cat.id 
-                                    ? "border-primary bg-primary/5 shadow-md" 
+                                  field.value === cat.id
+                                    ? "border-primary bg-primary/5 shadow-md"
                                     : "border-muted bg-card hover:border-primary/30 hover:shadow-sm"
                                 )}
                               >
                                 <cat.icon className={cn(
-                                  "w-8 h-8 mb-3", 
+                                  "w-8 h-8 mb-3",
                                   field.value === cat.id ? "text-primary" : "text-muted-foreground"
                                 )} />
                                 <span className={cn(
@@ -248,10 +274,10 @@ export default function ReportFound() {
                           <FormItem>
                             <FormLabel className="text-base">Any details?</FormLabel>
                             <FormControl>
-                              <Textarea 
-                                placeholder="Describe features like color, brand, condition, or unique marks..." 
-                                className="min-h-[120px] resize-none text-base rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all p-4" 
-                                {...field} 
+                              <Textarea
+                                placeholder="Describe features like color, brand, condition, or unique marks..."
+                                className="min-h-[120px] resize-none text-base rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all p-4"
+                                {...field}
                               />
                             </FormControl>
                             <FormMessage />
@@ -273,10 +299,10 @@ export default function ReportFound() {
                           <FormControl>
                             <div className="relative">
                               <MapPin className="absolute left-4 top-4 h-6 w-6 text-muted-foreground" />
-                              <Input 
-                                placeholder="Where did you find it?" 
-                                className="pl-12 h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all" 
-                                {...field} 
+                              <Input
+                                placeholder="Where did you find it?"
+                                className="pl-12 h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all"
+                                {...field}
                               />
                             </div>
                           </FormControl>
@@ -309,10 +335,10 @@ export default function ReportFound() {
                             A picture is worth a thousand words.
                           </div>
                           <FormControl>
-                            <ImageUpload 
-                              value={field.value || null} 
+                            <ImageUpload
+                              value={field.value || null}
                               onChange={field.onChange}
-                              className="bg-muted/30 border-muted-foreground/20" 
+                              className="bg-muted/30 border-muted-foreground/20"
                             />
                           </FormControl>
                           <FormMessage />
@@ -360,11 +386,11 @@ export default function ReportFound() {
                             <FormControl>
                               <div className="relative">
                                 <Phone className="absolute left-4 top-4 h-6 w-6 text-muted-foreground" />
-                                <Input 
-                                  type="tel" 
-                                  placeholder="078 000 0000" 
-                                  className="pl-12 h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all" 
-                                  {...field} 
+                                <Input
+                                  type="tel"
+                                  placeholder="078 000 0000"
+                                  className="pl-12 h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all"
+                                  {...field}
                                 />
                               </div>
                             </FormControl>
@@ -380,9 +406,9 @@ export default function ReportFound() {
 
             <div className="flex gap-4 pt-8">
               {step > 0 && (
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={prevStep}
                   className="flex-1 h-14 rounded-xl text-base font-medium border-border/50 bg-background hover:bg-muted"
                   disabled={isSubmitting}
@@ -390,10 +416,10 @@ export default function ReportFound() {
                   Back
                 </Button>
               )}
-              
+
               {step < STEPS.length - 1 ? (
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   onClick={nextStep}
                   className="flex-1 h-14 rounded-xl text-base font-semibold shadow-lg shadow-primary/25"
                 >
@@ -401,8 +427,8 @@ export default function ReportFound() {
                   <ChevronRight className="ml-2 w-5 h-5" />
                 </Button>
               ) : (
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="flex-1 h-14 rounded-xl text-base font-semibold shadow-lg shadow-primary/25"
                   disabled={isSubmitting}
                 >

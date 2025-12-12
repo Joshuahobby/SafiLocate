@@ -1,157 +1,107 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Search, MapPin, ShieldCheck, ArrowRight, Wallet, Phone, Menu } from "lucide-react";
+import { Search, MapPin, ShieldCheck, ArrowRight, Wallet, Phone, ArrowUpRight, Search as SearchIcon } from "lucide-react";
 import { motion } from "framer-motion";
-import heroBg from "@assets/generated_images/abstract_3d_glassmorphic_mesh_gradient_background.png";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Navbar } from "@/components/layout/navbar";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background flex flex-col font-sans">
+    <div className="min-h-screen bg-background flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
       {/* Navigation - Glassmorphic */}
-      <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-200">
-        <div className="absolute inset-0 bg-white/70 backdrop-blur-xl border-b border-white/20 shadow-sm" />
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary/20">
-              S
-            </div>
-            <span className="font-heading font-bold text-xl tracking-tight text-foreground">SafiLocate</span>
-          </div>
-          
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">Home</Link>
-            <Link href="/search" className="text-sm font-medium hover:text-primary transition-colors">Search</Link>
-            <Link href="/about" className="text-sm font-medium hover:text-primary transition-colors">How it Works</Link>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden md:block">
-              <Link href="/login">
-                <Button size="sm" className="rounded-full px-6 font-semibold">Sign In</Button>
-              </Link>
-            </div>
-
-            {/* Mobile Menu */}
-            <div className="md:hidden">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="w-6 h-6" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right">
-                  <SheetHeader>
-                    <SheetTitle>Menu</SheetTitle>
-                  </SheetHeader>
-                  <div className="flex flex-col gap-4 mt-8">
-                    <Link href="/">
-                      <Button variant="ghost" className="w-full justify-start text-lg">Home</Button>
-                    </Link>
-                    <Link href="/search">
-                      <Button variant="ghost" className="w-full justify-start text-lg">Search Items</Button>
-                    </Link>
-                    <Link href="/report-lost">
-                      <Button variant="ghost" className="w-full justify-start text-lg">Report Lost</Button>
-                    </Link>
-                    <Link href="/report-found">
-                      <Button variant="ghost" className="w-full justify-start text-lg">Report Found</Button>
-                    </Link>
-                    <div className="h-px bg-border my-2" />
-                    <Link href="/login">
-                      <Button className="w-full">Sign In</Button>
-                    </Link>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="flex-1 pt-16">
-        {/* Hero Section - Immersive */}
-        <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
-          {/* Background Image with Overlay */}
-          <div className="absolute inset-0 z-0">
-             <img 
-               src={heroBg} 
-               alt="Background" 
-               className="w-full h-full object-cover opacity-90"
-             />
-             <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-background" />
-          </div>
-          
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="max-w-4xl mx-auto text-center space-y-10">
+        {/* Premium Hero Section */}
+        <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-hero-wave">
+          <div className="container mx-auto px-4 relative z-10 pt-10 pb-20">
+            <div className="max-w-5xl mx-auto text-center space-y-12">
+
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease: "easeOut" }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
                 className="flex flex-col items-center"
               >
-                <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50/50 backdrop-blur-md px-4 py-1.5 text-sm font-semibold text-blue-700 mb-8 shadow-sm">
-                  <span className="flex h-2 w-2 rounded-full bg-blue-600 mr-2 animate-pulse"></span>
+                <div className="inline-flex items-center rounded-full border border-blue-200 bg-white/60 backdrop-blur-md px-5 py-2 text-sm font-semibold text-blue-700 mb-8 shadow-sm hover:bg-white/80 transition-colors cursor-default">
+                  <span className="flex h-2.5 w-2.5 rounded-full bg-blue-600 mr-3 animate-pulse"></span>
                   Trusted by 10,000+ users in Rwanda
                 </div>
-                
-                <h1 className="text-5xl md:text-7xl font-heading font-extrabold tracking-tight text-foreground mb-6 leading-[1.1]">
-                  Lost something? <br/>
+
+                <h1 className="text-6xl md:text-8xl font-heading font-extrabold tracking-tight text-slate-900 mb-8 leading-[1]">
+                  Lost something? <br />
                   <span className="text-gradient">We help you find it.</span>
                 </h1>
-                
-                <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                  The smart, secure way to report lost items and connect with trusted finders in your community.
+
+                <p className="text-xl md:text-2xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-light">
+                  The smart, secure way to report missing items and connect with trusted finders in your community.
                 </p>
               </motion.div>
 
-              {/* Integrated Search Pill */}
-              <motion.div 
-                className="w-full max-w-2xl mx-auto"
+              {/* Enhanced Search Pill */}
+              <motion.div
+                className="w-full max-w-2xl mx-auto relative group"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
               >
-                <div className="glass p-2 rounded-full flex items-center shadow-lg shadow-primary/5 hover:shadow-primary/10 transition-shadow">
-                    <div className="pl-4 text-muted-foreground">
-                        <Search className="w-5 h-5" />
-                    </div>
-                    <input 
-                        type="text" 
-                        placeholder="What are you looking for? (e.g. ID, Wallet, Phone)" 
-                        className="flex-1 bg-transparent border-none h-12 px-4 focus:ring-0 text-lg placeholder:text-muted-foreground/60 outline-none w-full min-w-0"
-                    />
-                    <Link href="/search">
-                        <Button size="lg" className="rounded-full px-8 h-12 text-base font-semibold shadow-md shrink-0">
-                            Search
-                        </Button>
-                    </Link>
+                <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="glass p-2.5 rounded-full flex items-center shadow-2xl shadow-blue-900/5 ring-1 ring-white/50 relative bg-white/80">
+                  <div className="pl-5 text-blue-500">
+                    <Search className="w-6 h-6" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search for IDs, Keys, Electronics..."
+                    className="flex-1 bg-transparent border-none h-14 px-4 focus:ring-0 text-lg placeholder:text-slate-400 font-medium text-slate-800 outline-none w-full min-w-0"
+                  />
+                  <Link href="/search">
+                    <Button size="lg" className="rounded-full px-8 h-14 text-lg font-bold shadow-lg shadow-blue-500/20 shrink-0 bg-blue-600 hover:bg-blue-700 transition-all hover:scale-105 active:scale-95">
+                      Search
+                    </Button>
+                  </Link>
                 </div>
               </motion.div>
 
-              <motion.div 
-                className="flex flex-col sm:flex-row gap-4 justify-center pt-8"
+              {/* Action Choice Cards */}
+              <motion.div
+                className="grid sm:grid-cols-2 gap-5 max-w-3xl mx-auto pt-8"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
               >
-                <Link href="/report-lost">
-                  <Button variant="secondary" size="lg" className="h-14 px-8 text-base rounded-2xl bg-white/80 backdrop-blur hover:bg-white border shadow-sm w-full sm:w-auto">
-                    <span className="mr-2">😞</span> I Lost Something
-                  </Button>
+                <Link href="/report-lost" className="group">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300 text-left h-full flex items-start gap-5 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="bg-orange-100/80 p-4 rounded-2xl text-orange-600 group-hover:scale-110 transition-transform duration-300">
+                      <SearchIcon className="w-8 h-8" />
+                    </div>
+                    <div className="relative">
+                      <h3 className="text-xl font-bold text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">I Lost Something</h3>
+                      <p className="text-slate-500 leading-snug">Report a missing item and alert the community instantly.</p>
+                      <div className="mt-4 flex items-center text-sm font-semibold text-orange-600 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
+                        Start Report <ArrowRight className="w-4 h-4 ml-1" />
+                      </div>
+                    </div>
+                  </div>
                 </Link>
-                <Link href="/report-found">
-                  <Button variant="secondary" size="lg" className="h-14 px-8 text-base rounded-2xl bg-white/80 backdrop-blur hover:bg-white border shadow-sm w-full sm:w-auto">
-                    <span className="mr-2">🙌</span> I Found Something
-                  </Button>
+
+                <Link href="/report-found" className="group">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300 text-left h-full flex items-start gap-5 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="bg-blue-100/80 p-4 rounded-2xl text-blue-600 group-hover:scale-110 transition-transform duration-300">
+                      <ShieldCheck className="w-8 h-8" />
+                    </div>
+                    <div className="relative">
+                      <h3 className="text-xl font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">I Found Something</h3>
+                      <p className="text-slate-500 leading-snug">Report a found item and help return it to its owner.</p>
+                      <div className="mt-4 flex items-center text-sm font-semibold text-blue-600 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
+                        Start Report <ArrowRight className="w-4 h-4 ml-1" />
+                      </div>
+                    </div>
+                  </div>
                 </Link>
               </motion.div>
+
             </div>
           </div>
         </section>
@@ -160,19 +110,19 @@ export default function Home() {
         <section className="py-24 bg-background relative">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-3 gap-8">
-              <FeatureCard 
+              <FeatureCard
                 icon={<Wallet className="w-8 h-8 text-white" />}
                 color="bg-blue-500"
                 title="Report Lost Items"
                 description="Create a secure listing for your lost valuables. Add details and a reward to fast-track recovery."
               />
-              <FeatureCard 
+              <FeatureCard
                 icon={<ShieldCheck className="w-8 h-8 text-white" />}
                 color="bg-emerald-500"
                 title="Trusted Finders"
                 description="Our community of verified finders and partner institutions ensure your items are safe."
               />
-              <FeatureCard 
+              <FeatureCard
                 icon={<MapPin className="w-8 h-8 text-white" />}
                 color="bg-amber-500"
                 title="Smart Matching"
@@ -192,7 +142,7 @@ export default function Home() {
               </div>
               <Link href="/search">
                 <Button variant="ghost" className="hidden sm:flex group text-primary font-medium">
-                  View All Items 
+                  View All Items
                   <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
@@ -222,7 +172,7 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            
+
             <div className="mt-12 text-center sm:hidden">
               <Link href="/search">
                 <Button variant="outline" size="lg" className="w-full rounded-xl">View All Items</Button>
@@ -241,11 +191,11 @@ export default function Home() {
                 <span className="font-heading font-bold text-xl">SafiLocate</span>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                Making it easy to find what matters. <br/>
+                Making it easy to find what matters. <br />
                 Built with ❤️ in Rwanda.
               </p>
             </div>
-            
+
             <div>
               <h4 className="font-heading font-semibold mb-6">Platform</h4>
               <ul className="space-y-4 text-sm text-muted-foreground">

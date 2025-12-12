@@ -3,7 +3,7 @@ import { MapPin, Calendar, ArrowRight, Wallet, Smartphone, FileText, Key, Shirt,
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-interface ItemCardProps {
+export interface ItemCardProps {
   id: string;
   title: string;
   category: string;
@@ -14,39 +14,41 @@ interface ItemCardProps {
   className?: string;
 }
 
+export type Item = ItemCardProps;
+
 export function ItemCard({ id, title, category, location, date, type, image, className }: ItemCardProps) {
   return (
     <Link href={`/item/${id}`}>
       <div className={cn(
-        "group bg-card rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer h-full flex flex-col border border-border/50 hover:-translate-y-1",
+        "group glass-card rounded-2xl overflow-hidden cursor-pointer h-full flex flex-col",
         className
       )}>
         {/* Image Area */}
         <div className="aspect-[4/3] bg-muted relative overflow-hidden">
           <div className="absolute top-3 right-3 z-10">
-            <Badge 
+            <Badge
               variant="secondary"
               className={cn(
                 "backdrop-blur-md border-0 shadow-sm font-medium",
-                type === 'found' 
-                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' 
-                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                type === 'found'
+                  ? 'bg-primary/10 text-primary dark:text-blue-300'
+                  : 'bg-orange-500/10 text-orange-700 dark:text-orange-300'
               )}
             >
               {type === 'found' ? 'Found' : 'Lost'}
             </Badge>
           </div>
-          
+
           {/* Placeholder Image State */}
           <div className="w-full h-full flex items-center justify-center bg-secondary/30 text-muted-foreground group-hover:scale-105 transition-transform duration-500">
             {image ? (
-               <img src={image} alt={title} className="w-full h-full object-cover" />
+              <img src={image} alt={title} className="w-full h-full object-cover" />
             ) : (
-               getCategoryIcon(category)
+              getCategoryIcon(category)
             )}
           </div>
         </div>
-        
+
         {/* Content Area */}
         <div className="p-5 flex-1 flex flex-col">
           <div className="mb-auto">
@@ -58,7 +60,7 @@ export function ItemCard({ id, title, category, location, date, type, image, cla
               <span className="truncate">{location}</span>
             </div>
           </div>
-          
+
           <div className="flex items-center justify-between pt-4 border-t border-border/50 mt-2">
             <span className="text-xs text-muted-foreground flex items-center bg-secondary/50 px-2 py-1 rounded-md">
               <Calendar className="w-3 h-3 mr-1.5" />

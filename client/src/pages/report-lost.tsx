@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Tag, 
-  User, 
-  Loader2, 
+import {
+  ArrowLeft,
+  MapPin,
+  Tag,
+  User,
+  Loader2,
   ChevronRight,
   Check,
   Phone,
@@ -73,6 +75,7 @@ export default function ReportLost() {
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const form = useForm<FormData>({
     resolver: zodResolver(lostItemSchema),
@@ -92,13 +95,13 @@ export default function ReportLost() {
 
   const nextStep = async () => {
     let fieldsToValidate: (keyof FormData)[] = [];
-    
+
     if (step === 0) fieldsToValidate = ['category', 'title', 'description'];
     if (step === 1) fieldsToValidate = ['location', 'dateLost', 'imageUrl'];
     if (step === 2) fieldsToValidate = ['contactName', 'contactPhone', 'reward'];
 
     const isValid = await form.trigger(fieldsToValidate);
-    
+
     if (isValid) {
       setStep((s) => Math.min(s + 1, STEPS.length));
     }
@@ -106,20 +109,31 @@ export default function ReportLost() {
 
   const prevStep = () => setStep((s) => Math.max(s - 1, 0));
 
+  // ... inside component
+
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
-    // Simulate API call to create pending listing
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Redirect to payment
-    const mockListingId = "LST-" + Math.floor(Math.random() * 10000);
-    setLocation(`/payment?ref=${mockListingId}&amount=1000`);
+    try {
+      // Save data to session storage for the payment page
+      sessionStorage.setItem('pendingLostItem', JSON.stringify(data));
+      // Redirect to payment
+      setLocation(`/payment?amount=1000`);
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Minimal Header */}
-      <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-10">
+      <header className="glass-nav z-10">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/">
             <Button variant="ghost" size="sm" className="-ml-2 hover:bg-muted/50 rounded-full px-4">
@@ -138,7 +152,7 @@ export default function ReportLost() {
         {/* Progress Bar */}
         <div className="mb-10">
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <motion.div 
+            <motion.div
               className="h-full bg-destructive"
               initial={{ width: "0%" }}
               animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
@@ -150,7 +164,7 @@ export default function ReportLost() {
         {/* Cost Alert */}
         <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-8 flex gap-4 items-center shadow-sm">
           <div className="bg-amber-100 p-2 rounded-full text-amber-600">
-             <AlertCircle className="w-5 h-5" />
+            <AlertCircle className="w-5 h-5" />
           </div>
           <p className="text-sm text-amber-800 leading-relaxed">
             Note: Reporting a lost item costs <strong>1,000 RWF</strong>. This fee helps us verify listings and prevent spam.
@@ -183,13 +197,13 @@ export default function ReportLost() {
                                 onClick={() => field.onChange(cat.id)}
                                 className={cn(
                                   "cursor-pointer flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 hover:scale-[1.02]",
-                                  field.value === cat.id 
-                                    ? "border-destructive bg-destructive/5 shadow-md" 
+                                  field.value === cat.id
+                                    ? "border-destructive bg-destructive/5 shadow-md"
                                     : "border-muted bg-card hover:border-destructive/30 hover:shadow-sm"
                                 )}
                               >
                                 <cat.icon className={cn(
-                                  "w-8 h-8 mb-3", 
+                                  "w-8 h-8 mb-3",
                                   field.value === cat.id ? "text-destructive" : "text-muted-foreground"
                                 )} />
                                 <span className={cn(
@@ -226,10 +240,10 @@ export default function ReportLost() {
                           <FormItem>
                             <FormLabel className="text-base">Any details?</FormLabel>
                             <FormControl>
-                              <Textarea 
-                                placeholder="Describe features like color, brand, condition, or unique marks..." 
-                                className="min-h-[120px] resize-none text-base rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all p-4" 
-                                {...field} 
+                              <Textarea
+                                placeholder="Describe features like color, brand, condition, or unique marks..."
+                                className="min-h-[120px] resize-none text-base rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all p-4"
+                                {...field}
                               />
                             </FormControl>
                             <FormMessage />
@@ -251,10 +265,10 @@ export default function ReportLost() {
                           <FormControl>
                             <div className="relative">
                               <MapPin className="absolute left-4 top-4 h-6 w-6 text-muted-foreground" />
-                              <Input 
-                                placeholder="e.g. Near Kigali Heights, Kimihurura" 
-                                className="pl-12 h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all" 
-                                {...field} 
+                              <Input
+                                placeholder="e.g. Near Kigali Heights, Kimihurura"
+                                className="pl-12 h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all"
+                                {...field}
                               />
                             </div>
                           </FormControl>
@@ -287,10 +301,10 @@ export default function ReportLost() {
                             If you have a photo of the item (or a similar one), upload it here.
                           </div>
                           <FormControl>
-                            <ImageUpload 
-                              value={field.value || null} 
+                            <ImageUpload
+                              value={field.value || null}
                               onChange={field.onChange}
-                              className="bg-muted/30 border-muted-foreground/20" 
+                              className="bg-muted/30 border-muted-foreground/20"
                             />
                           </FormControl>
                           <FormMessage />
@@ -314,10 +328,10 @@ export default function ReportLost() {
                           <FormControl>
                             <div className="relative">
                               <Gift className="absolute left-4 top-4 h-6 w-6 text-amber-500" />
-                              <Input 
-                                placeholder="e.g. 5000 RWF" 
-                                className="pl-12 h-14 text-lg rounded-xl bg-amber-50 border-amber-200 focus:border-amber-400 focus:ring-amber-200 transition-all text-amber-900 placeholder:text-amber-900/40 font-medium" 
-                                {...field} 
+                              <Input
+                                placeholder="e.g. 5000 RWF"
+                                className="pl-12 h-14 text-lg rounded-xl bg-amber-50 border-amber-200 focus:border-amber-400 focus:ring-amber-200 transition-all text-amber-900 placeholder:text-amber-900/40 font-medium"
+                                {...field}
                               />
                             </div>
                           </FormControl>
@@ -352,11 +366,11 @@ export default function ReportLost() {
                             <FormControl>
                               <div className="relative">
                                 <Phone className="absolute left-4 top-4 h-6 w-6 text-muted-foreground" />
-                                <Input 
-                                  type="tel" 
-                                  placeholder="078 000 0000" 
-                                  className="pl-12 h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all" 
-                                  {...field} 
+                                <Input
+                                  type="tel"
+                                  placeholder="078 000 0000"
+                                  className="pl-12 h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all"
+                                  {...field}
                                 />
                               </div>
                             </FormControl>
@@ -372,9 +386,9 @@ export default function ReportLost() {
 
             <div className="flex gap-4 pt-8">
               {step > 0 && (
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={prevStep}
                   className="flex-1 h-14 rounded-xl text-base font-medium border-border/50 bg-background hover:bg-muted"
                   disabled={isSubmitting}
@@ -382,10 +396,10 @@ export default function ReportLost() {
                   Back
                 </Button>
               )}
-              
+
               {step < STEPS.length - 1 ? (
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   onClick={nextStep}
                   className="flex-1 h-14 rounded-xl text-base font-semibold shadow-lg shadow-destructive/25 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                 >
@@ -393,8 +407,8 @@ export default function ReportLost() {
                   <ChevronRight className="ml-2 w-5 h-5" />
                 </Button>
               ) : (
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="flex-1 h-14 rounded-xl text-base font-semibold shadow-lg shadow-destructive/25 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                   disabled={isSubmitting}
                 >

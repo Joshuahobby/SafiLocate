@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Search as SearchIcon, 
-  Filter, 
+import {
+  ArrowLeft,
+  MapPin,
+  Search as SearchIcon,
+  Filter,
   Calendar,
   Wallet,
   Smartphone,
@@ -35,45 +35,36 @@ import {
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 
-import { ItemCard } from "@/components/item-card";
+import { useQuery } from "@tanstack/react-query";
+import { ItemCard, type Item } from "@/components/item-card";
 
-// Mock Data Generation
-const generateMockItems = (count: number) => {
-  return Array.from({ length: count }).map((_, i) => ({
-    id: `item-${i}`,
-    title: [
-      "Blue Samsung Galaxy S21",
-      "Brown Leather Wallet",
-      "National ID Card",
-      "Car Keys (Toyota)",
-      "Black Backpack",
-      "iPhone 13 Pro Max",
-      "Driving License",
-      "Prescription Glasses"
-    ][i % 8],
-    category: ["electronics", "wallet", "id_document", "keys", "other", "electronics", "id_document", "other"][i % 8],
-    location: ["Kigali, Nyarugenge", "Kicukiro Centre", "Remera, Gasabo", "Kimironko Market", "Nyamirambo", "Gisozi", "Kanombe", "Kacyiru"][i % 8],
-    date: new Date(Date.now() - Math.floor(Math.random() * 1000000000)).toLocaleDateString(),
-    type: (i % 3 === 0 ? "lost" : "found") as "lost" | "found",
-    image: null
-  }));
-};
-
-const MOCK_ITEMS = generateMockItems(12);
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("");
 
-  const filteredItems = MOCK_ITEMS.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
-    const matchesLocation = locationFilter === "" || item.location.toLowerCase().includes(locationFilter.toLowerCase());
-    
-    return matchesSearch && matchesCategory && matchesLocation;
+  const { data: items = [], isLoading } = useQuery<Item[]>({
+    queryKey: ["/api/items", { search: searchQuery, category: categoryFilter, location: locationFilter }],
   });
+
+  // Client-side filtering logic moved to server/API or simplified below
+
+  const queryParams = new URLSearchParams();
+  if (searchQuery) queryParams.set("search", searchQuery);
+  if (categoryFilter && categoryFilter !== "all") queryParams.set("category", categoryFilter);
+  if (locationFilter) queryParams.set("location", locationFilter);
+
+  const queryString = queryParams.toString();
+  const queryKey = `/api/items?${queryString}`;
+
+  const { data: serverItems = [] } = useQuery<Item[]>({
+    queryKey: [queryKey], // The default fetcher will use this string as URL
+  });
+
+  // Re-assign filteredItems to serverItems (since server is doing the work)
+  const filteredItems = serverItems;
+
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -87,8 +78,8 @@ export default function SearchPage() {
           </Link>
           <div className="flex-1 relative">
             <SearchIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search lost or found items..." 
+            <Input
+              placeholder="Search lost or found items..."
               className="pl-9 h-9 w-full bg-muted/50 border-transparent focus:bg-background focus:border-input transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -100,7 +91,7 @@ export default function SearchPage() {
                 <Filter className="w-4 h-4" />
               </Button>
             </SheetTrigger>
-            <SheetContent>
+            <SheetContent side="right">
               <SheetHeader>
                 <SheetTitle>Filters</SheetTitle>
                 <SheetDescription>
@@ -123,11 +114,11 @@ export default function SearchPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Location</label>
-                  <Input 
-                    placeholder="Filter by district or sector" 
+                  <Input
+                    placeholder="Filter by district or sector"
                     value={locationFilter}
                     onChange={(e) => setLocationFilter(e.target.value)}
                   />
@@ -136,62 +127,62 @@ export default function SearchPage() {
                 <div className="space-y-4">
                   <label className="text-sm font-medium">Date Range</label>
                   <div className="flex items-center gap-2">
-                     <Button variant="outline" size="sm" className="flex-1">Last 24h</Button>
-                     <Button variant="outline" size="sm" className="flex-1">Last Week</Button>
+                    <Button variant="outline" size="sm" className="flex-1">Last 24h</Button>
+                    <Button variant="outline" size="sm" className="flex-1">Last Week</Button>
                   </div>
                 </div>
-                
+
                 <div className="pt-4">
-                    <Button className="w-full" onClick={() => {
-                        setCategoryFilter("all");
-                        setLocationFilter("");
-                        setSearchQuery("");
-                    }}>
-                        Reset Filters
-                    </Button>
+                  <Button className="w-full" onClick={() => {
+                    setCategoryFilter("all");
+                    setLocationFilter("");
+                    setSearchQuery("");
+                  }}>
+                    Reset Filters
+                  </Button>
                 </div>
               </div>
             </SheetContent>
           </Sheet>
         </div>
-        
+
         {/* Category Quick Filters */}
         <div className="container mx-auto px-4 pb-3 overflow-x-auto no-scrollbar">
           <div className="flex gap-2">
-            <Badge 
-                variant={categoryFilter === 'all' ? "default" : "outline"} 
-                className="cursor-pointer"
-                onClick={() => setCategoryFilter('all')}
+            <Badge
+              variant={categoryFilter === 'all' ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setCategoryFilter('all')}
             >
-                All
+              All
             </Badge>
-            <Badge 
-                variant={categoryFilter === 'id_document' ? "default" : "outline"} 
-                className="cursor-pointer flex items-center gap-1"
-                onClick={() => setCategoryFilter('id_document')}
+            <Badge
+              variant={categoryFilter === 'id_document' ? "default" : "outline"}
+              className="cursor-pointer flex items-center gap-1"
+              onClick={() => setCategoryFilter('id_document')}
             >
-                <FileText className="w-3 h-3" /> IDs
+              <FileText className="w-3 h-3" /> IDs
             </Badge>
-            <Badge 
-                variant={categoryFilter === 'electronics' ? "default" : "outline"} 
-                className="cursor-pointer flex items-center gap-1"
-                onClick={() => setCategoryFilter('electronics')}
+            <Badge
+              variant={categoryFilter === 'electronics' ? "default" : "outline"}
+              className="cursor-pointer flex items-center gap-1"
+              onClick={() => setCategoryFilter('electronics')}
             >
-                <Smartphone className="w-3 h-3" /> Electronics
+              <Smartphone className="w-3 h-3" /> Electronics
             </Badge>
-            <Badge 
-                variant={categoryFilter === 'wallet' ? "default" : "outline"} 
-                className="cursor-pointer flex items-center gap-1"
-                onClick={() => setCategoryFilter('wallet')}
+            <Badge
+              variant={categoryFilter === 'wallet' ? "default" : "outline"}
+              className="cursor-pointer flex items-center gap-1"
+              onClick={() => setCategoryFilter('wallet')}
             >
-                <Wallet className="w-3 h-3" /> Wallets
+              <Wallet className="w-3 h-3" /> Wallets
             </Badge>
-            <Badge 
-                variant={categoryFilter === 'keys' ? "default" : "outline"} 
-                className="cursor-pointer flex items-center gap-1"
-                onClick={() => setCategoryFilter('keys')}
+            <Badge
+              variant={categoryFilter === 'keys' ? "default" : "outline"}
+              className="cursor-pointer flex items-center gap-1"
+              onClick={() => setCategoryFilter('keys')}
             >
-                <Key className="w-3 h-3" /> Keys
+              <Key className="w-3 h-3" /> Keys
             </Badge>
           </div>
         </div>
@@ -199,19 +190,19 @@ export default function SearchPage() {
 
       <main className="flex-1 container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-muted-foreground">
-                Showing {filteredItems.length} results
-            </p>
+          <p className="text-sm text-muted-foreground">
+            Showing {filteredItems.length} results
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredItems.map((item) => (
-            <ItemCard 
+            <ItemCard
               key={item.id}
               {...item}
             />
           ))}
-          
+
           {filteredItems.length === 0 && (
             <div className="col-span-full py-20 text-center text-muted-foreground">
               <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">

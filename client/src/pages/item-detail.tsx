@@ -1,15 +1,19 @@
 import { useState } from "react";
 import { Link, useRoute } from "wouter";
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Calendar, 
-  Share2, 
-  Flag, 
-  ShieldCheck, 
+import { useQuery } from "@tanstack/react-query";
+import { type Item } from "@/components/item-card";
+import {
+  ArrowLeft,
+  MapPin,
+  Calendar,
+  Share2,
+  Flag,
+  ShieldCheck,
   MessageCircle,
-  Phone
+  Phone,
+  ArrowRight
 } from "lucide-react";
+import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,21 +30,27 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock Data (in real app, fetch from API based on ID)
-const MOCK_ITEM = {
-  id: "item-123",
-  title: "Blue Samsung Galaxy S21",
-  type: "found",
-  category: "Electronics",
-  location: "Kigali, Nyarugenge, Near Market",
-  date: "2023-10-24",
-  description: "Found a blue Samsung Galaxy S21 with a cracked screen protector near the main entrance of Nyarugenge Market. It has a black case with a sticker on the back.",
-  finderName: "Jean Paul",
-  reference: "FD-8921"
-};
+
+// Mock Data removed
+
 
 export default function ItemDetail() {
   const [, params] = useRoute("/item/:id");
+  const id = params?.id;
+
+  const { data: item, isLoading } = useQuery<Item>({
+    queryKey: [`/api/items/${id}`],
+    enabled: !!id
+  });
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!item) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">Item not found</div>;
+  }
+
   const { toast } = useToast();
   const [isClaiming, setIsClaiming] = useState(false);
 
@@ -57,33 +67,29 @@ export default function ItemDetail() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b sticky top-0 bg-background/95 backdrop-blur-md z-10">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+      <Navbar />
+
+      <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl pt-24">
+        <div className="mb-6">
           <Link href="/search">
-            <Button variant="ghost" size="sm" className="-ml-2">
+            <Button variant="ghost" size="sm" className="-ml-2 text-muted-foreground hover:text-primary">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Search
             </Button>
           </Link>
-          <Button variant="ghost" size="icon">
-            <Share2 className="w-4 h-4" />
-          </Button>
         </div>
-      </header>
-
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
         <div className="grid md:grid-cols-2 gap-8">
           {/* Image Section */}
           <div className="space-y-4">
             <div className="aspect-[4/3] bg-muted rounded-xl overflow-hidden border flex items-center justify-center">
-               {/* Placeholder */}
-               <div className="text-center text-muted-foreground">
-                 <ShieldCheck className="w-16 h-16 mx-auto mb-2 opacity-20" />
-                 <p>No Image Provided</p>
-               </div>
+              {/* Placeholder */}
+              <div className="text-center text-muted-foreground">
+                <ShieldCheck className="w-16 h-16 mx-auto mb-2 opacity-20" />
+                <p>No Image Provided</p>
+              </div>
             </div>
             <div className="grid grid-cols-4 gap-2">
-               {/* Thumbnails would go here */}
+              {/* Thumbnails would go here */}
             </div>
           </div>
 
@@ -91,20 +97,20 @@ export default function ItemDetail() {
           <div className="space-y-6">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <Badge variant={MOCK_ITEM.type === 'found' ? 'default' : 'secondary'} className="px-3 py-1">
-                  {MOCK_ITEM.type === 'found' ? 'Found Item' : 'Lost Item'}
+                <Badge variant={item.type === 'found' ? 'default' : 'secondary'} className="px-3 py-1">
+                  {item.type === 'found' ? 'Found Item' : 'Lost Item'}
                 </Badge>
-                <span className="text-sm text-muted-foreground">Ref: {MOCK_ITEM.reference}</span>
+                <span className="text-sm text-muted-foreground">Ref: #{item.id}</span>
               </div>
-              <h1 className="text-3xl font-bold tracking-tight mb-2">{MOCK_ITEM.title}</h1>
+              <h1 className="text-3xl font-bold tracking-tight mb-2">{item.title}</h1>
               <div className="flex flex-col gap-2 text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  {MOCK_ITEM.location}
+                  {item.location}
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  Reported on {MOCK_ITEM.date}
+                  Reported on {item.dateFound || item.dateLost}
                 </div>
               </div>
             </div>
@@ -112,7 +118,7 @@ export default function ItemDetail() {
             <div className="bg-muted/30 p-4 rounded-lg border">
               <h3 className="font-semibold mb-2">Description</h3>
               <p className="text-muted-foreground leading-relaxed">
-                {MOCK_ITEM.description}
+                {item.description}
               </p>
             </div>
 
@@ -158,11 +164,11 @@ export default function ItemDetail() {
                 </DialogContent>
               </Dialog>
             </div>
-            
+
             <div className="flex justify-center">
-               <Button variant="link" className="text-muted-foreground text-xs">
-                 <Flag className="w-3 h-3 mr-1" /> Report as suspicious
-               </Button>
+              <Button variant="link" className="text-muted-foreground text-xs">
+                <Flag className="w-3 h-3 mr-1" /> Report as suspicious
+              </Button>
             </div>
           </div>
         </div>

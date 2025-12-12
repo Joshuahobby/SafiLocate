@@ -10,7 +10,8 @@ import ReportLost from "@/pages/report-lost";
 import PaymentPage from "@/pages/payment";
 import SearchPage from "@/pages/search";
 import ItemDetail from "@/pages/item-detail";
-import AdminDashboard from "@/pages/admin";
+import AdminLogin from "@/pages/admin/login";
+import AdminDashboard from "@/pages/admin/dashboard";
 
 function Router() {
   return (
@@ -21,6 +22,8 @@ function Router() {
       <Route path="/payment" component={PaymentPage} />
       <Route path="/search" component={SearchPage} />
       <Route path="/item/:id" component={ItemDetail} />
+      <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin" component={AdminDashboard} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
