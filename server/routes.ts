@@ -31,13 +31,16 @@ export async function registerRoutes(
 
   // Get Items (Unified Search)
   app.get("/api/items", async (req, res) => {
-    const found = await storage.getFoundItems();
-    const lost = await storage.getLostItems();
+    // Unified Search
+    const foundResult = await storage.listFoundItems({});
+    const lostResult = await storage.listLostItems({});
+    const found = foundResult.items;
+    const lost = lostResult.items;
 
     // Add type field to distinguish
     const allItems = [
-      ...found.map(i => ({ ...i, type: "found" as const })),
-      ...lost.map(i => ({ ...i, type: "lost" as const }))
+      ...found.map(i => ({ ...i, type: "found" as const, date: i.dateFound, image: i.imageUrls?.[0] })),
+      ...lost.map(i => ({ ...i, type: "lost" as const, date: i.dateLost, image: i.imageUrls?.[0] }))
     ];
 
     // Filter Logic
@@ -67,39 +70,47 @@ export async function registerRoutes(
     }
 
     // Sort by date (newest first)
-    // Note: Assuming date strings are comparable or we convert them. 
-    // For MVP relying on string sort might be enough if ISO, but user types manual "2023-10-10".
-    // Let's just return them as is for now, or simplistic sort.
-    results.reverse(); // Show newest added first (if IDs increase)
+    results.reverse();
 
     res.json(results);
   });
 
   // Get Single Item
   app.get("/api/items/:id", async (req, res) => {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
+    const id = req.params.id;
+    if (!id) {
       return res.status(400).json({ error: "Invalid ID" });
     }
 
-    const item = await storage.getItem(id);
-    if (!item) {
-      return res.status(404).json({ error: "Item not found" });
+    const foundItem = await storage.getFoundItem(id);
+    if (foundItem) {
+      return res.json({ ...foundItem, type: 'found', date: foundItem.dateFound, image: foundItem.imageUrls?.[0] });
     }
 
-    res.json(item);
+    const lostItem = await storage.getLostItem(id);
+    if (lostItem) {
+      return res.json({ ...lostItem, type: 'lost', date: lostItem.dateLost, image: lostItem.imageUrls?.[0] });
+    }
+
+    return res.status(404).json({ error: "Item not found" });
   });
 
   // Verify/Update Item Status (Admin)
   app.patch("/api/items/:id", async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = req.params.id;
     const { type, status } = req.body;
 
-    if (isNaN(id) || !type || !status) {
+    if (!id || !type || !status) {
       return res.status(400).json({ error: "Invalid request" });
     }
 
-    const updated = await storage.updateItemStatus(id, type, status);
+    let updated;
+    if (type === 'found') {
+      updated = await storage.updateFoundItemStatus(id, status);
+    } else {
+      updated = await storage.updateLostItemStatus(id, status);
+    }
+
     if (!updated) {
       return res.status(404).json({ error: "Item not found" });
     }
@@ -108,14 +119,20 @@ export async function registerRoutes(
 
   // Delete Item (Admin)
   app.delete("/api/items/:id", async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = req.params.id;
     const type = req.query.type as string; // 'found' or 'lost'
 
-    if (isNaN(id) || !type) {
+    if (!id || !type) {
       return res.status(400).json({ error: "Invalid request" });
     }
 
-    const success = await storage.deleteItem(id, type as 'found' | 'lost');
+    let success;
+    if (type === 'found') {
+      success = await storage.deleteFoundItem(id);
+    } else {
+      success = await storage.deleteLostItem(id);
+    }
+
     if (!success) {
       return res.status(404).json({ error: "Item not found" });
     }

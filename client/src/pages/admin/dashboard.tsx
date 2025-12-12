@@ -69,7 +69,7 @@ export default function AdminDashboard() {
     });
 
     const updateStatusMutation = useMutation({
-        mutationFn: async ({ id, type, status }: { id: number, type: string, status: string }) => {
+        mutationFn: async ({ id, type, status }: { id: string, type: string, status: string }) => {
             await apiRequest("PATCH", `/api/items/${id}`, { type, status });
         },
         onSuccess: () => {
@@ -79,7 +79,7 @@ export default function AdminDashboard() {
     });
 
     const deleteItemMutation = useMutation({
-        mutationFn: async ({ id, type }: { id: number, type: string }) => {
+        mutationFn: async ({ id, type }: { id: string, type: string }) => {
             await apiRequest("DELETE", `/api/items/${id}?type=${type}`);
         },
         onSuccess: () => {
@@ -226,7 +226,7 @@ export default function AdminDashboard() {
                                                     </TableCell>
                                                     <TableCell>
                                                         <Badge variant="secondary" className={
-                                                            item.status === 'open' ? 'bg-blue-100 text-blue-700 hover:bg-blue-100' : 'bg-green-100 text-green-700 hover:bg-green-100'
+                                                            item.status === 'pending' ? 'bg-blue-100 text-blue-700 hover:bg-blue-100' : 'bg-green-100 text-green-700 hover:bg-green-100'
                                                         }>
                                                             {item.status}
                                                         </Badge>

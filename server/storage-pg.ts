@@ -158,6 +158,14 @@ export class PgStorage implements IStorage {
     return item;
   }
 
+  async deleteFoundItem(id: string): Promise<boolean> {
+    const [deleted] = await db
+      .delete(foundItems)
+      .where(eq(foundItems.id, id))
+      .returning();
+    return !!deleted;
+  }
+
   // ============ Lost Items ============
   async createLostItem(itemData: InsertLostItem): Promise<LostItem> {
     const [item] = await db
@@ -241,6 +249,14 @@ export class PgStorage implements IStorage {
       .returning();
 
     return item;
+  }
+
+  async deleteLostItem(id: string): Promise<boolean> {
+    const [deleted] = await db
+      .delete(lostItems)
+      .where(eq(lostItems.id, id))
+      .returning();
+    return !!deleted;
   }
 
   async activateLostItem(id: string, expiresAt: Date): Promise<LostItem> {

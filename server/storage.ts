@@ -38,6 +38,7 @@ export interface IStorage {
     limit?: number;
   }): Promise<{ items: FoundItem[]; total: number }>;
   updateFoundItemStatus(id: string, status: string): Promise<FoundItem>;
+  deleteFoundItem(id: string): Promise<boolean>;
 
   // Lost Items
   createLostItem(item: InsertLostItem): Promise<LostItem>;
@@ -51,6 +52,7 @@ export interface IStorage {
     limit?: number;
   }): Promise<{ items: LostItem[]; total: number }>;
   updateLostItemStatus(id: string, status: string): Promise<LostItem>;
+  deleteLostItem(id: string): Promise<boolean>;
   activateLostItem(id: string, expiresAt: Date): Promise<LostItem>;
   getExpiredLostItems(): Promise<LostItem[]>;
 
@@ -165,14 +167,14 @@ export class MemStorage implements IStorage {
 
   async listFoundItems(filters: any): Promise<{ items: FoundItem[]; total: number }> {
     let items = Array.from(this.foundItems.values());
-    
+
     if (filters.status) {
       items = items.filter((item) => item.status === filters.status);
     }
     if (filters.category) {
       items = items.filter((item) => item.category === filters.category);
     }
-    
+
     return { items, total: items.length };
   }
 
@@ -182,6 +184,10 @@ export class MemStorage implements IStorage {
     const updated = { ...item, status, updatedAt: new Date() } as FoundItem;
     this.foundItems.set(id, updated);
     return updated;
+  }
+
+  async deleteFoundItem(id: string): Promise<boolean> {
+    return this.foundItems.delete(id);
   }
 
   // Lost Items - Stub implementations
@@ -206,14 +212,14 @@ export class MemStorage implements IStorage {
 
   async listLostItems(filters: any): Promise<{ items: LostItem[]; total: number }> {
     let items = Array.from(this.lostItems.values());
-    
+
     if (filters.status) {
       items = items.filter((item) => item.status === filters.status);
     }
     if (filters.paymentStatus) {
       items = items.filter((item) => item.paymentStatus === filters.paymentStatus);
     }
-    
+
     return { items, total: items.length };
   }
 
@@ -223,6 +229,10 @@ export class MemStorage implements IStorage {
     const updated = { ...item, status, updatedAt: new Date() } as LostItem;
     this.lostItems.set(id, updated);
     return updated;
+  }
+
+  async deleteLostItem(id: string): Promise<boolean> {
+    return this.lostItems.delete(id);
   }
 
   async activateLostItem(id: string, expiresAt: Date): Promise<LostItem> {
@@ -266,14 +276,14 @@ export class MemStorage implements IStorage {
 
   async listClaims(filters: any): Promise<{ items: Claim[]; total: number }> {
     let items = Array.from(this.claims.values());
-    
+
     if (filters.itemId) {
       items = items.filter((claim) => claim.itemId === filters.itemId);
     }
     if (filters.status) {
       items = items.filter((claim) => claim.status === filters.status);
     }
-    
+
     return { items, total: items.length };
   }
 
@@ -344,11 +354,11 @@ export class MemStorage implements IStorage {
 
   async listReports(filters: any): Promise<{ items: Report[]; total: number }> {
     let items = Array.from(this.reports.values());
-    
+
     if (filters.status) {
       items = items.filter((report) => report.status === filters.status);
     }
-    
+
     return { items, total: items.length };
   }
 

@@ -34,11 +34,22 @@ import { useToast } from "@/hooks/use-toast";
 // Mock Data removed
 
 
+interface ItemDetailData {
+  id: string;
+  title: string;
+  category: string;
+  location: string;
+  date: string;
+  type: 'found' | 'lost';
+  image?: string;
+  description: string;
+}
+
 export default function ItemDetail() {
   const [, params] = useRoute("/item/:id");
   const id = params?.id;
 
-  const { data: item, isLoading } = useQuery<Item>({
+  const { data: item, isLoading } = useQuery<ItemDetailData>({
     queryKey: [`/api/items/${id}`],
     enabled: !!id
   });
@@ -110,7 +121,7 @@ export default function ItemDetail() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  Reported on {item.dateFound || item.dateLost}
+                  Reported on {item.date}
                 </div>
               </div>
             </div>
