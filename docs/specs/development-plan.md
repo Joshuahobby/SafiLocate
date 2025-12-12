@@ -1,5 +1,14 @@
 # Development Plan
 
+> 📚 **Documentation Index**: See the [Documentation README](../../README.md) for all available documentation.
+
+**Related Documents:**
+- [Code Review & Action Plan](../planning/CODE_REVIEW_AND_ACTION_PLAN.md) - Detailed implementation plan
+- [Phase 1 Completion](../planning/PHASE_1_COMPLETE.md) - Phase 1 summary
+- [Progress Review](./progress-review.md) - Current status
+
+---
+
 We will build this iteratively, focusing on the "Happy Path" first.
 
 ## Phase 1: Foundation & Brand (MVP Setup) [COMPLETED ✅]

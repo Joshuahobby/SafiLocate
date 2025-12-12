@@ -1,5 +1,14 @@
 # Tech Stack Proposal
 
+> 📚 **Documentation Index**: See the [Documentation README](../../README.md) for all available documentation.
+
+**Related Documents:**
+- [System Architecture](./system-architecture.md) - System design
+- [Developer Handbook](../reference/DEVELOPER_HANDBOOK.md) - Complete technical specification
+- [Development Plan](./development-plan.md) - Development roadmap
+
+---
+
 Given the Replit environment and the need for a low-budget, high-performance MVP, here is the recommended stack:
 
 ## Frontend: React + Vite + Tailwind CSS
