@@ -1,5 +1,14 @@
 # Project Progress Review
 
+> 📚 **Documentation Index**: See the [Documentation README](../../README.md) for all available documentation.
+
+**Related Documents:**
+- [Development Plan](./development-plan.md) - Development phases
+- [Code Review & Action Plan](../planning/CODE_REVIEW_AND_ACTION_PLAN.md) - Detailed review
+- [Phase 1 Completion](../planning/PHASE_1_COMPLETE.md) - Phase 1 status
+
+---
+
 ## Status: MVP Feature Complete (Ready for Design Polish)
 
 ### ✅ Completed Features

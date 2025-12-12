@@ -4,7 +4,20 @@ import { type Server } from "http";
 import viteConfig from "../vite.config";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { nanoid } from "nanoid";
+import crypto from "crypto";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Node 18 lacks crypto.hash; Vite expects it. Polyfill using createHash.
+if (!(crypto as any).hash) {
+  (crypto as any).hash = (
+    algorithm: string,
+    data: crypto.BinaryLike,
+    encoding?: crypto.BinaryToTextEncoding,
+  ) => crypto.createHash(algorithm).update(data).digest(encoding as any);
+}
 
 const viteLogger = createLogger();
 
@@ -35,12 +48,7 @@ export async function setupVite(server: Server, app: Express) {
     const url = req.originalUrl;
 
     try {
-      const clientTemplate = path.resolve(
-        import.meta.dirname,
-        "..",
-        "client",
-        "index.html",
-      );
+      const clientTemplate = path.resolve(__dirname, "..", "client", "index.html");
 
       // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");

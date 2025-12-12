@@ -1,5 +1,15 @@
 # Product Summary
 
+> 📚 **Documentation Index**: See the [Documentation README](../../README.md) for all available documentation.
+
+**Related Documents:**
+- [System Architecture](./system-architecture.md) - System design
+- [Tech Stack](./tech-stack.md) - Technology choices
+- [Development Plan](./development-plan.md) - Development roadmap
+- [Developer Handbook](../reference/DEVELOPER_HANDBOOK.md) - Complete technical specification
+
+---
+
 ## Main Problem
 In Rwanda, recovering lost items (IDs, phones, documents) is inefficient, relying on fragmented word-of-mouth, radio announcements, or informal social media posts. There is no centralized, trusted digital registry.
 

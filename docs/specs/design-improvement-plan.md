@@ -1,5 +1,13 @@
 # SafiLocate Design Improvement Plan
 
+> 📚 **Documentation Index**: See the [Documentation README](../../README.md) for all available documentation.
+
+**Related Documents:**
+- [Progress Review](./progress-review.md) - Current status
+- [Development Plan](./development-plan.md) - Development phases
+
+---
+
 ## 1. Design Philosophy: "Trust in Motion"
 The current design is functional but feels "generative" and clinical. We need to shift to an aesthetic that feels **crafted, trustworthy, and human.**
 *   **Core Emotion:** Reliability, Speed, Community.

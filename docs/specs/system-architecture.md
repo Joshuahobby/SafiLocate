@@ -1,5 +1,14 @@
 # System Architecture
 
+> 📚 **Documentation Index**: See the [Documentation README](../../README.md) for all available documentation.
+
+**Related Documents:**
+- [Product Summary](./product-summary.md) - Product overview
+- [Tech Stack](./tech-stack.md) - Technology choices
+- [Developer Handbook](../reference/DEVELOPER_HANDBOOK.md) - Complete technical specification
+
+---
+
 The system follows a standard **Client-Server-Database** pattern with external integrations for Payments and AI.
 
 \`\`\`ascii
