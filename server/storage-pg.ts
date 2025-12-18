@@ -27,6 +27,11 @@ import {
   type InsertPayment,
   type Report,
   type InsertReport,
+  type AuditLog,
+  type InsertAuditLog,
+  type SystemSetting,
+  auditLogs,
+  systemSettings,
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { LISTING_DURATION_DAYS, RECEIPT_PREFIXES } from "@shared/constants";
@@ -39,12 +44,27 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000, // Increased for cloud databases
+  ssl: {
+    rejectUnauthorized: false, // Required for Neon
+  },
 });
 
 const db = drizzle(pool);
 
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+const PgSessionStore = connectPg(session);
+
 export class PgStorage implements IStorage {
+  public sessionStore: session.Store;
+
+  constructor() {
+    this.sessionStore = new PgSessionStore({
+      pool,
+      createTableIfMissing: true,
+    });
+  }
   // ============ Users ============
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
@@ -65,23 +85,59 @@ export class PgStorage implements IStorage {
     return user;
   }
 
+  async listUsers(page: number = 1, limit: number = 20): Promise<{ users: User[]; total: number }> {
+    const offset = (page - 1) * limit;
+
+    const allUsers = await db
+      .select()
+      .from(users)
+      .limit(limit)
+      .offset(offset)
+      .orderBy(desc(users.createdAt));
+
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users);
+
+    return {
+      users: allUsers,
+      total: Number(count),
+    };
+  }
+
+  async updateUserRole(id: string, role: string): Promise<User | undefined> {
+    const validRoles = ["user", "admin", "moderator"];
+    if (!validRoles.includes(role)) {
+      throw new Error(`Invalid role: ${role}`);
+    }
+
+    const [updatedUser] = await db
+      .update(users)
+      .set({ role: role as any })
+      .where(eq(users.id, id))
+      .returning();
+
+    return updatedUser;
+  }
+
   // ============ Found Items ============
-  async createFoundItem(itemData: InsertFoundItem): Promise<FoundItem> {
+  async createFoundItem(item: InsertFoundItem & { tags?: string[] }): Promise<FoundItem> {
     // Generate receipt number
     const receiptNumber = await this.generateReceiptNumber("found");
 
-    const [item] = await db
+    const [newItem] = await db
       .insert(foundItems)
       .values({
-        ...itemData,
+        ...item,
         receiptNumber,
         status: "pending",
         createdAt: new Date(),
         updatedAt: new Date(),
+        tags: item.tags || [],
       })
       .returning();
 
-    return item;
+    return newItem;
   }
 
   async getFoundItem(id: string): Promise<FoundItem | undefined> {
@@ -106,6 +162,7 @@ export class PgStorage implements IStorage {
     status?: string;
     category?: string;
     location?: string;
+    search?: string;
     page?: number;
     limit?: number;
   }): Promise<{ items: FoundItem[]; total: number }> {
@@ -122,6 +179,17 @@ export class PgStorage implements IStorage {
     }
     if (filters.location) {
       conditions.push(ilike(foundItems.location, `%${filters.location}%`));
+    }
+    if (filters.search) {
+      const query = `%${filters.search}%`;
+      conditions.push(
+        or(
+          ilike(foundItems.title, query),
+          ilike(foundItems.description, query),
+          ilike(foundItems.location, query),
+          sql`array_to_string(${foundItems.tags}, ' ') ILIKE ${query}`
+        )
+      );
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -167,19 +235,20 @@ export class PgStorage implements IStorage {
   }
 
   // ============ Lost Items ============
-  async createLostItem(itemData: InsertLostItem): Promise<LostItem> {
-    const [item] = await db
+  async createLostItem(item: InsertLostItem & { tags?: string[] }): Promise<LostItem> {
+    const [newItem] = await db
       .insert(lostItems)
       .values({
-        ...itemData,
+        ...item,
         status: "pending",
         paymentStatus: "unpaid",
         createdAt: new Date(),
         updatedAt: new Date(),
+        tags: item.tags || [],
       })
       .returning();
 
-    return item;
+    return newItem;
   }
 
   async getLostItem(id: string): Promise<LostItem | undefined> {
@@ -196,6 +265,7 @@ export class PgStorage implements IStorage {
     paymentStatus?: string;
     category?: string;
     location?: string;
+    search?: string;
     page?: number;
     limit?: number;
   }): Promise<{ items: LostItem[]; total: number }> {
@@ -215,6 +285,17 @@ export class PgStorage implements IStorage {
     }
     if (filters.location) {
       conditions.push(ilike(lostItems.location, `%${filters.location}%`));
+    }
+    if (filters.search) {
+      const query = `%${filters.search}%`;
+      conditions.push(
+        or(
+          ilike(lostItems.title, query),
+          ilike(lostItems.description, query),
+          ilike(lostItems.location, query),
+          sql`array_to_string(${lostItems.tags}, ' ') ILIKE ${query}`
+        )
+      );
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -288,7 +369,7 @@ export class PgStorage implements IStorage {
   }
 
   // ============ Claims ============
-  async createClaim(claimData: InsertClaim): Promise<Claim> {
+  async createClaim(claimData: InsertClaim & { userId?: string }): Promise<Claim> {
     const [claim] = await db
       .insert(claims)
       .values({
@@ -313,6 +394,7 @@ export class PgStorage implements IStorage {
 
   async listClaims(filters: {
     itemId?: string;
+    userId?: string;
     status?: string;
     page?: number;
     limit?: number;
@@ -327,6 +409,9 @@ export class PgStorage implements IStorage {
     }
     if (filters.status) {
       conditions.push(eq(claims.status, filters.status as any));
+    }
+    if (filters.userId) {
+      conditions.push(eq(claims.userId, filters.userId));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -475,6 +560,15 @@ export class PgStorage implements IStorage {
     };
   }
 
+  async updateReportStatus(id: string, status: string): Promise<Report> {
+    const [report] = await db
+      .update(reports)
+      .set({ status: status as any })
+      .where(eq(reports.id, id))
+      .returning();
+    return report;
+  }
+
   // ============ Helper Methods ============
   private async generateReceiptNumber(type: "found" | "lost"): Promise<string> {
     const prefix = RECEIPT_PREFIXES[type];
@@ -513,6 +607,121 @@ export class PgStorage implements IStorage {
       items: [],
       total: 0,
     };
+  }
+
+  async getStats() {
+    const [found] = await db.select({ count: sql<number>`count(*)` }).from(foundItems);
+    const [lost] = await db.select({ count: sql<number>`count(*)` }).from(lostItems);
+    const [claimsCount] = await db.select({ count: sql<number>`count(*)` }).from(claims);
+
+    const [revenue] = await db
+      .select({ total: sql<number>`sum(amount)` })
+      .from(payments)
+      .where(eq(payments.status, "paid"));
+
+    const [activeFound] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(foundItems)
+      .where(eq(foundItems.status, "active"));
+
+    const [activeLost] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(lostItems)
+      .where(eq(lostItems.status, "active"));
+
+    return {
+      totalFound: Number(found.count),
+      totalLost: Number(lost.count),
+      totalClaims: Number(claimsCount.count),
+      totalRevenue: Number(revenue?.total || 0),
+      activeFound: Number(activeFound.count),
+      activeLost: Number(activeLost.count),
+    };
+  }
+
+  async getWeeklyActivity() {
+    // Generate last 7 days series
+    const days = await db.execute(sql`
+      SELECT to_char(d, 'Mon') as name, d::date as date
+      FROM generate_series(
+        current_date - interval '6 days', 
+        current_date, 
+        '1 day'
+      ) as d
+    `);
+
+    // Get daily counts for found items
+    const foundCounts = await db.execute(sql`
+      SELECT 
+        date_trunc('day', created_at)::date as day,
+        count(*)::int as count
+      FROM found_items
+      WHERE created_at >= current_date - interval '6 days'
+      GROUP BY 1
+    `);
+
+    // Get daily counts for lost items
+    const lostCounts = await db.execute(sql`
+      SELECT 
+        date_trunc('day', created_at)::date as day,
+        count(*)::int as count
+      FROM lost_items
+      WHERE created_at >= current_date - interval '6 days'
+      GROUP BY 1
+    `);
+
+    // Map results
+    const activity = days.rows.map((day: any) => {
+      const found = foundCounts.rows.find((r: any) =>
+        new Date(r.day).toDateString() === new Date(day.date).toDateString()
+      );
+      const lost = lostCounts.rows.find((r: any) =>
+        new Date(r.day).toDateString() === new Date(day.date).toDateString()
+      );
+
+      return {
+        name: day.name,
+        found: Number(found?.count || 0),
+        lost: Number(lost?.count || 0)
+      };
+    });
+
+    return activity;
+  }
+
+  // ============ Audit Logs ============
+  async createAuditLog(log: InsertAuditLog): Promise<AuditLog> {
+    const [auditLog] = await db
+      .insert(auditLogs)
+      .values(log)
+      .returning();
+    return auditLog;
+  }
+
+  async getLatestAuditLogs(limit: number = 20): Promise<AuditLog[]> {
+    const logs = await db
+      .select()
+      .from(auditLogs)
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(limit);
+    return logs;
+  }
+
+  // ============ System Settings ============
+  async getSettings(): Promise<SystemSetting[]> {
+    return await db.select().from(systemSettings);
+  }
+
+  async updateSetting(key: string, value: string): Promise<SystemSetting> {
+    const [setting] = await db
+      .insert(systemSettings)
+      .values({ key, value })
+      .onConflictDoUpdate({
+        target: systemSettings.key,
+        set: { value, updatedAt: new Date() },
+      })
+      .returning();
+    return setting;
   }
 }
 

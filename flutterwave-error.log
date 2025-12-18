@@ -1,0 +1,100 @@
+
+=== Flutterwave Error ===
+Time: 2025-12-18T13:44:59.588Z
+Error Type: TypeError
+Error Message: Cannot read properties of undefined (reading 'standard')
+Error Stack: TypeError: Cannot read properties of undefined (reading 'standard')
+    at PaymentService.initializePayment (C:\Users\TRUST\Desktop\SafiLocate\server\services\payment.service.ts:76:52)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (C:\Users\TRUST\Desktop\SafiLocate\server\routes\payment.ts:15:24)
+
+HTTP Response Status: N/A
+HTTP Response Data: N/A
+
+Error Code: N/A
+
+Full Error Object: {
+  "stack": "TypeError: Cannot read properties of undefined (reading 'standard')\n    at PaymentService.initializePayment (C:\\Users\\TRUST\\Desktop\\SafiLocate\\server\\services\\payment.service.ts:76:52)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async <anonymous> (C:\\Users\\TRUST\\Desktop\\SafiLocate\\server\\routes\\payment.ts:15:24)",
+  "message": "Cannot read properties of undefined (reading 'standard')"
+}
+=====================================
+
+=== Flutterwave Error ===
+Time: 2025-12-18T13:46:03.283Z
+Error Type: TypeError
+Error Message: Cannot read properties of undefined (reading 'standard')
+Error Stack: TypeError: Cannot read properties of undefined (reading 'standard')
+    at PaymentService.initializePayment (C:\Users\TRUST\Desktop\SafiLocate\server\services\payment.service.ts:76:52)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (C:\Users\TRUST\Desktop\SafiLocate\server\routes\payment.ts:15:24)
+
+HTTP Response Status: N/A
+HTTP Response Data: N/A
+
+Error Code: N/A
+
+Full Error Object: {
+  "stack": "TypeError: Cannot read properties of undefined (reading 'standard')\n    at PaymentService.initializePayment (C:\\Users\\TRUST\\Desktop\\SafiLocate\\server\\services\\payment.service.ts:76:52)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async <anonymous> (C:\\Users\\TRUST\\Desktop\\SafiLocate\\server\\routes\\payment.ts:15:24)",
+  "message": "Cannot read properties of undefined (reading 'standard')"
+}
+=====================================
+
+=== Flutterwave Error ===
+Time: 2025-12-18T13:47:05.006Z
+Error Type: TypeError
+Error Message: Cannot read properties of undefined (reading 'standard')
+Error Stack: TypeError: Cannot read properties of undefined (reading 'standard')
+    at PaymentService.initializePayment (C:\Users\TRUST\Desktop\SafiLocate\server\services\payment.service.ts:76:52)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (C:\Users\TRUST\Desktop\SafiLocate\server\routes\payment.ts:15:24)
+
+HTTP Response Status: N/A
+HTTP Response Data: N/A
+
+Error Code: N/A
+
+Full Error Object: {
+  "stack": "TypeError: Cannot read properties of undefined (reading 'standard')\n    at PaymentService.initializePayment (C:\\Users\\TRUST\\Desktop\\SafiLocate\\server\\services\\payment.service.ts:76:52)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async <anonymous> (C:\\Users\\TRUST\\Desktop\\SafiLocate\\server\\routes\\payment.ts:15:24)",
+  "message": "Cannot read properties of undefined (reading 'standard')"
+}
+=====================================
+
+=== Flutterwave Error ===
+Time: 2025-12-18T13:48:32.295Z
+Error Type: TypeError
+Error Message: Cannot read properties of undefined (reading 'standard')
+Error Stack: TypeError: Cannot read properties of undefined (reading 'standard')
+    at PaymentService.initializePayment (C:\Users\TRUST\Desktop\SafiLocate\server\services\payment.service.ts:76:52)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (C:\Users\TRUST\Desktop\SafiLocate\server\routes\payment.ts:15:24)
+
+HTTP Response Status: N/A
+HTTP Response Data: N/A
+
+Error Code: N/A
+
+Full Error Object: {
+  "stack": "TypeError: Cannot read properties of undefined (reading 'standard')\n    at PaymentService.initializePayment (C:\\Users\\TRUST\\Desktop\\SafiLocate\\server\\services\\payment.service.ts:76:52)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async <anonymous> (C:\\Users\\TRUST\\Desktop\\SafiLocate\\server\\routes\\payment.ts:15:24)",
+  "message": "Cannot read properties of undefined (reading 'standard')"
+}
+=====================================
+
+=== Flutterwave Error ===
+Time: 2025-12-18T13:51:33.914Z
+Error Type: TypeError
+Error Message: Cannot read properties of undefined (reading 'standard')
+Error Stack: TypeError: Cannot read properties of undefined (reading 'standard')
+    at PaymentService.initializePayment (C:\Users\TRUST\Desktop\SafiLocate\server\services\payment.service.ts:76:52)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (C:\Users\TRUST\Desktop\SafiLocate\server\routes\payment.ts:15:24)
+
+HTTP Response Status: N/A
+HTTP Response Data: N/A
+
+Error Code: N/A
+
+Full Error Object: {
+  "stack": "TypeError: Cannot read properties of undefined (reading 'standard')\n    at PaymentService.initializePayment (C:\\Users\\TRUST\\Desktop\\SafiLocate\\server\\services\\payment.service.ts:76:52)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async <anonymous> (C:\\Users\\TRUST\\Desktop\\SafiLocate\\server\\routes\\payment.ts:15:24)",
+  "message": "Cannot read properties of undefined (reading 'standard')"
+}
+=====================================

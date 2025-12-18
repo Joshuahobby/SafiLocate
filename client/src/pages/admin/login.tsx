@@ -4,37 +4,33 @@ import { Lock, ArrowRight, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import type { User } from "@shared/schema";
 
 export default function AdminLogin() {
-    const [pin, setPin] = useState("");
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
     const [, setLocation] = useLocation();
-    const { toast } = useToast();
+    const { loginMutation } = useAuth();
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-
-        // Hardcoded for MVP - in production this should be env var validated on server
-        if (pin === "2024") {
-            sessionStorage.setItem("admin_token", "authenticated");
-            toast({
-                title: "Welcome Admin",
-                description: "Access granted to dashboard.",
-            });
-            setLocation("/admin/dashboard");
-        } else {
-            toast({
-                title: "Access Denied",
-                description: "Invalid PIN code.",
-                variant: "destructive"
-            });
-            setPin("");
-        }
+        loginMutation.mutate({ username, password }, {
+            onSuccess: (user: User) => {
+                // Only allow admin/moderator roles to access dashboard
+                if (user.role === 'admin' || user.role === 'moderator') {
+                    setLocation("/admin/dashboard");
+                } else {
+                    // Regular users shouldn't be here
+                    setLocation("/");
+                }
+            }
+        });
     };
 
     return (
         <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-            <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-blue-900/20 blur-[100px]" />
                 <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-indigo-900/20 blur-[100px]" />
             </div>
@@ -46,35 +42,42 @@ export default function AdminLogin() {
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-white mb-2">Admin Access</h1>
-                        <p className="text-slate-400 text-sm">Enter security PIN to continue</p>
+                        <p className="text-slate-400 text-sm">Authorized personnel only</p>
                     </div>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
-                    <div className="space-y-2">
+                    <div className="space-y-4">
+                        <Input
+                            placeholder="Username"
+                            className="bg-slate-950/50 border-slate-700 focus:border-blue-500/50 text-white placeholder:text-slate-500"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            autoFocus
+                        />
                         <Input
                             type="password"
-                            placeholder="••••"
-                            className="text-center text-3xl tracking-[1em] h-16 bg-slate-950/50 border-slate-700 focus:border-blue-500/50 text-white placeholder:text-slate-700 font-mono"
-                            maxLength={4}
-                            value={pin}
-                            onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, ''))}
-                            autoFocus
+                            placeholder="Password"
+                            className="bg-slate-950/50 border-slate-700 focus:border-blue-500/50 text-white placeholder:text-slate-500"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                         />
                     </div>
 
                     <Button
                         type="submit"
                         className="w-full h-12 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl transition-all shadow-lg shadow-blue-500/20"
+                        disabled={loginMutation.isPending}
                     >
-                        Access Dashboard <ArrowRight className="ml-2 w-4 h-4" />
+                        {loginMutation.isPending ? "Authenticating..." : "Access Dashboard"}
+                        {!loginMutation.isPending && <ArrowRight className="ml-2 w-4 h-4" />}
                     </Button>
                 </form>
 
                 <div className="mt-8 text-center">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs">
                         <ShieldAlert className="w-3 h-3" />
-                        Restricted Area
+                        Restricted Area - Admin Only
                     </div>
                 </div>
             </Card>

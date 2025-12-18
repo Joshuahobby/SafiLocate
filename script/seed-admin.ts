@@ -7,10 +7,11 @@
  * Make sure DATABASE_URL is set in your environment.
  */
 
+import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { sql } from "drizzle-orm";
-import { users } from "@shared/schema";
+import { users } from "../shared/schema";
 import { randomUUID } from "crypto";
 import bcrypt from "bcrypt";
 
@@ -83,7 +84,6 @@ async function seedAdmin() {
   }
 }
 
-// Import sql for the query
-import { sql } from "drizzle-orm";
+
 
 seedAdmin();

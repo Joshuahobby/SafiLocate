@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { type Item } from "@/components/item-card";
+import { ClaimDialog } from "@/components/claim-dialog";
 import {
   ArrowLeft,
   MapPin,
@@ -43,6 +44,9 @@ interface ItemDetailData {
   type: 'found' | 'lost';
   image?: string;
   description: string;
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
 }
 
 export default function ItemDetail() {
@@ -55,26 +59,18 @@ export default function ItemDetail() {
   });
 
   if (isLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   if (!item) {
     return <div className="min-h-screen bg-background flex items-center justify-center">Item not found</div>;
   }
 
-  const { toast } = useToast();
-  const [isClaiming, setIsClaiming] = useState(false);
-
-  const handleClaim = () => {
-    setIsClaiming(true);
-    setTimeout(() => {
-      setIsClaiming(false);
-      toast({
-        title: "Claim Submitted",
-        description: "The finder has been notified. They will contact you if details match.",
-      });
-    }, 1500);
-  };
+  const isContactVisible = item.contactPhone && !item.contactPhone.includes("*");
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -92,15 +88,19 @@ export default function ItemDetail() {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Image Section */}
           <div className="space-y-4">
-            <div className="aspect-[4/3] bg-muted rounded-xl overflow-hidden border flex items-center justify-center">
-              {/* Placeholder */}
-              <div className="text-center text-muted-foreground">
-                <ShieldCheck className="w-16 h-16 mx-auto mb-2 opacity-20" />
-                <p>No Image Provided</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {/* Thumbnails would go here */}
+            <div className="aspect-[4/3] bg-muted rounded-xl overflow-hidden border flex items-center justify-center relative group">
+              {item.image ? (
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="text-center text-muted-foreground">
+                  <ShieldCheck className="w-16 h-16 mx-auto mb-2 opacity-20" />
+                  <p>No Image Provided</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -111,7 +111,7 @@ export default function ItemDetail() {
                 <Badge variant={item.type === 'found' ? 'default' : 'secondary'} className="px-3 py-1">
                   {item.type === 'found' ? 'Found Item' : 'Lost Item'}
                 </Badge>
-                <span className="text-sm text-muted-foreground">Ref: #{item.id}</span>
+                <span className="text-sm text-muted-foreground">Ref: #{item.id.slice(0, 8)}</span>
               </div>
               <h1 className="text-3xl font-bold tracking-tight mb-2">{item.title}</h1>
               <div className="flex flex-col gap-2 text-muted-foreground">
@@ -121,59 +121,70 @@ export default function ItemDetail() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  Reported on {item.date}
+                  Reported on {new Date(item.date).toLocaleDateString()}
                 </div>
               </div>
             </div>
 
             <div className="bg-muted/30 p-4 rounded-lg border">
               <h3 className="font-semibold mb-2">Description</h3>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                 {item.description}
               </p>
             </div>
 
-            <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-1 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4" />
-                Safety Verification
-              </h3>
-              <p className="text-sm text-blue-800">
-                To protect both parties, contact details are hidden until a claim is verified.
-              </p>
-            </div>
+            {isContactVisible ? (
+              <div className="bg-green-50 border border-green-200 p-4 rounded-lg space-y-3">
+                <h3 className="font-semibold text-green-900 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4" />
+                  Verified Contact Information
+                </h3>
+                <div className="space-y-2 text-sm text-green-800">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Name:</span> {item.contactName}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4" /> <span className="font-medium">Phone:</span> {item.contactPhone}
+                  </div>
+                  {item.contactEmail && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Email:</span> {item.contactEmail}
+                    </div>
+                  )}
+                  <p className="text-xs text-green-700 mt-2">
+                    Please contact the {item.type === 'found' ? 'finder' : 'owner'} to arrange return.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-1 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4" />
+                  Safety Verification
+                </h3>
+                <p className="text-sm text-blue-800">
+                  To protect both parties, contact details are hidden until you claim this item and your claim is verified by our team.
+                </p>
+              </div>
+            )}
 
             <div className="flex gap-4 pt-4">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="lg" className="flex-1 h-12 text-lg">
-                    This is mine! (Claim)
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Claim Item</DialogTitle>
-                    <DialogDescription>
-                      Provide details to prove this item belongs to you. The finder will review this.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label>Your Phone Number</Label>
-                      <Input placeholder="078 000 0000" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Proof of Ownership</Label>
-                      <Textarea placeholder="Describe unique features, wallpaper, scratches, or contents that only the owner would know..." className="h-32" />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={handleClaim} disabled={isClaiming}>
-                      {isClaiming ? "Sending..." : "Send Claim Request"}
+              {!isContactVisible && (
+                <ClaimDialog
+                  itemId={item.id}
+                  itemType={item.type}
+                  trigger={
+                    <Button size="lg" className="flex-1 h-12 text-lg">
+                      This is mine! (Claim)
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                  }
+                />
+              )}
+              {isContactVisible && (
+                <Button size="lg" variant="outline" className="flex-1 h-12 text-lg cursor-default">
+                  Claim Verified
+                </Button>
+              )}
             </div>
 
             <div className="flex justify-center">

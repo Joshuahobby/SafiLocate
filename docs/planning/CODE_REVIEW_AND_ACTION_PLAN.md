@@ -83,7 +83,7 @@
 // Only has placeholder comments
 // No actual routes implemented
 ```
-
+nano banana can oxme  to the end when u get the industry command to the mazimum endzone to what we aggreed on so from now on we shall be having to the next realism of the extended approach , we mainly focus on Lost items and connecting back 
 **`server/storage.ts`**: ⚠️ Incomplete
 - Only `MemStorage` (in-memory) implemented
 - Only User CRUD methods

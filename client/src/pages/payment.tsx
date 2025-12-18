@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Navbar } from "@/components/layout/navbar";
-import { processPayment } from "@/lib/payment";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,26 +14,20 @@ export default function PaymentPage() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [step, setStep] = useState<'method' | 'processing' | 'success'>('method');
+  const [step, setStep] = useState<'method' | 'processing'>('method');
   const [phoneNumber, setPhoneNumber] = useState("");
 
   // Extract query params
   const searchParams = new URLSearchParams(window.location.search);
   const amount = searchParams.get('amount') || "1000";
-
-  // Load pending item data
-  const [itemData, setItemData] = useState<any>(null);
+  const itemId = searchParams.get('itemId');
 
   useEffect(() => {
-    const data = sessionStorage.getItem('pendingLostItem');
-    if (!data) {
-      // If no data, redirect back to report
-      toast({ title: "No item found", description: "Please start a new report.", variant: "destructive" });
+    if (!itemId) {
+      toast({ title: "Error", description: "No item ID provided. Please start a new report.", variant: "destructive" });
       setLocation('/report-lost');
-      return;
     }
-    setItemData(JSON.parse(data));
-  }, [setLocation, toast]);
+  }, [itemId, setLocation, toast]);
 
   const handlePayment = async () => {
     if (!phoneNumber.startsWith("07")) {
@@ -46,66 +39,33 @@ export default function PaymentPage() {
     setStep('processing');
 
     try {
-      // 1. Process "Payment"
-      const paymentRes = await processPayment({
-        phoneNumber,
+      // Initialize Payment on Server
+      const res = await apiRequest("POST", "/api/payments/initialize", {
+        lostItemId: itemId,
         amount: parseInt(amount),
-        provider: 'momo'
+        phoneNumber
       });
 
-      if (!paymentRes.success) {
-        throw new Error(paymentRes.error || "Payment failed");
+      const data = await res.json();
+
+      if (data.paymentUrl) {
+        // Redirect to Flutterwave (or Mock)
+        window.location.href = data.paymentUrl;
+      } else {
+        throw new Error("Failed to get payment URL");
       }
 
-      // 2. Submit Data to Backend
-      await apiRequest("POST", "/api/lost-items", {
-        ...itemData,
-        reward: itemData.reward || null
-      });
-
-      // 3. Cleanup & Success
-      queryClient.invalidateQueries({ queryKey: ["/api/items"] });
-      sessionStorage.removeItem('pendingLostItem');
-      setStep('success');
-
     } catch (error: any) {
-      setStep('method'); // Go back
+      console.error(error);
+      setStep('method');
       toast({
         title: "Transaction Failed",
-        description: error.message,
+        description: error.message || "Could not initialize payment.",
         variant: "destructive"
       });
-    } finally {
       setIsProcessing(false);
     }
   };
-
-  if (step === 'success') {
-    return (
-      <div className="min-h-screen bg-background flex flex-col font-sans">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center p-4 pt-20">
-          <Card className="max-w-md w-full p-8 text-center space-y-6 animate-in zoom-in-95 duration-300 glass-card">
-            <div className="w-24 h-24 bg-green-100/50 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-              <CheckCircle2 className="w-12 h-12" />
-            </div>
-
-            <div className="space-y-2">
-              <h1 className="text-3xl font-heading font-bold text-foreground">Success!</h1>
-              <p className="text-muted-foreground text-lg">
-                Your lost item has been reported. <br />
-                We'll notify you when we find a match.
-              </p>
-            </div>
-
-            <Button className="w-full h-12 text-lg rounded-xl" onClick={() => setLocation('/')}>
-              Return to Home
-            </Button>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
   if (step === 'processing') {
     return (
@@ -119,9 +79,9 @@ export default function PaymentPage() {
             </div>
           </div>
           <div className="text-center space-y-3 max-w-md">
-            <h2 className="text-2xl font-bold">Processing Payment...</h2>
+            <h2 className="text-2xl font-bold">Initiating Payment...</h2>
             <p className="text-muted-foreground text-lg">
-              Check your phone ({phoneNumber}) for the Mobile Money prompt to authorize <strong>{parseInt(amount).toLocaleString()} RWF</strong>.
+              Please wait while we redirect you to the secure payment gateway.
             </p>
           </div>
         </div>
@@ -148,7 +108,7 @@ export default function PaymentPage() {
             <div className="bg-slate-50 p-4 rounded-xl space-y-3 border border-slate-100">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-slate-500">Service</span>
-                <span className="font-semibold text-slate-700">Lost Item Report</span>
+                <span className="font-semibold text-slate-700">Lost Item Listing</span>
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-slate-200">
                 <span className="text-slate-500">Total</span>

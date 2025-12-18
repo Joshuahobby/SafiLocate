@@ -1,14 +1,15 @@
 import { sql } from "drizzle-orm";
-import { 
-  pgTable, 
-  text, 
-  varchar, 
-  timestamp, 
-  boolean, 
-  decimal, 
+import {
+  pgTable,
+  text,
+  varchar,
+  timestamp,
+  boolean,
+  decimal,
   date,
   pgEnum,
-  index
+  index,
+  json
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -110,6 +111,7 @@ export const claims = pgTable("claims", {
   claimantName: varchar("claimant_name", { length: 100 }).notNull(),
   claimantPhone: varchar("claimant_phone", { length: 20 }).notNull(), // Rwanda format
   claimantEmail: text("claimant_email"), // Optional
+  userId: varchar("user_id"), // FK to users.id (if claimed by registered user)
   description: text("description").notNull(), // Proof of ownership (min 50 chars)
   evidencePhotos: text("evidence_photos").array(), // Optional evidence photos
   status: claimStatusEnum("status").notNull().default("pending"),
@@ -144,6 +146,13 @@ export const payments = pgTable("payments", {
   createdAtIdx: index("idx_payments_created_at").on(table.createdAt),
 }));
 
+// Session Table (connect-pg-simple)
+export const session = pgTable("session", {
+  sid: varchar("sid").primaryKey(),
+  sess: json("sess").notNull(),
+  expire: timestamp("expire", { precision: 6 }).notNull(),
+});
+
 // Reports Table (for reporting suspicious items/claims)
 export const reports = pgTable("reports", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -162,6 +171,27 @@ export const reports = pgTable("reports", {
   statusIdx: index("idx_reports_status").on(table.status),
   createdAtIdx: index("idx_reports_created_at").on(table.createdAt),
 }));
+
+// Audit Logs Table
+export const auditLogs = pgTable("audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull(), // FK to users.id
+  action: varchar("action", { length: 50 }).notNull(), // e.g. "verified_item", "rejected_claim"
+  entityType: varchar("entity_type", { length: 20 }).notNull(), // item, claim, user, report, system
+  entityId: varchar("entity_id", { length: 255 }),
+  details: json("details"), // Store generic details { oldValue, newValue, etc }
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  adminIdIdx: index("idx_audit_logs_admin_id").on(table.adminId),
+  createdAtIdx: index("idx_audit_logs_created_at").on(table.createdAt),
+}));
+
+// System Settings Table
+export const systemSettings = pgTable("system_settings", {
+  key: varchar("key", { length: 50 }).primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 // Zod Schemas for Validation
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -227,6 +257,16 @@ export const insertReportSchema = createInsertSchema(reports).pick({
   description: true,
 });
 
+export const insertAuditLogSchema = createInsertSchema(auditLogs).pick({
+  adminId: true,
+  action: true,
+  entityType: true,
+  entityId: true,
+  details: true,
+});
+
+export const insertSystemSettingSchema = createInsertSchema(systemSettings);
+
 // Type Exports
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -245,3 +285,9 @@ export type Payment = typeof payments.$inferSelect;
 
 export type InsertReport = z.infer<typeof insertReportSchema>;
 export type Report = typeof reports.$inferSelect;
+
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type AuditLog = typeof auditLogs.$inferSelect;
+
+export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
+export type SystemSetting = typeof systemSettings.$inferSelect;

@@ -3,6 +3,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 
 const app = express();
 const httpServer = createServer(app);
@@ -15,13 +17,29 @@ declare module "http" {
 
 app.use(
   express.json({
+    limit: "50mb",
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: "50mb" }));
+
+// Security Middleware
+app.use(helmet({ contentSecurityPolicy: false }));
+
+// Rate limiting - more lenient in development
+const isDev = process.env.NODE_ENV !== "production";
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: isDev ? 1000 : 100, // Higher limit in dev
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path.startsWith("/uploads") || req.path.includes("."), // Skip static files
+}));
+
+app.use("/uploads", express.static("uploads", { maxAge: "1d" }));
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -60,7 +78,10 @@ app.use((req, res, next) => {
   next();
 });
 
+import { setupAuth } from "./auth";
+
 (async () => {
+  setupAuth(app);
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

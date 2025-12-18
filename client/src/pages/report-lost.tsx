@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -10,69 +9,50 @@ import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
   MapPin,
-  Tag,
-  User,
   Loader2,
-  ChevronRight,
-  Check,
   Phone,
-  Gift,
   AlertCircle,
-  FileText,
-  Smartphone,
-  Wallet,
-  Key,
-  Shirt,
-  MoreHorizontal
+  Sparkles,
+  Send,
+  Camera,
+  Calendar,
+  User,
+  Package,
+  Coins
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ImageUpload } from "@/components/image-upload";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Card } from "@/components/ui/card";
 
-// Validation Schemas
+// Validation Schema
 const lostItemSchema = z.object({
-  category: z.string().min(1, "Please select a category"),
-  title: z.string().min(3, "Title must be at least 3 characters"),
-  description: z.string().min(10, "Please provide more detail"),
-  location: z.string().min(3, "Last seen location is required"),
-  dateLost: z.string().min(1, "Date is required"),
+  category: z.string().min(1, "Select a category"),
+  title: z.string().min(3, "What did you lose?"),
+  description: z.string().min(10, "Add more details"),
+  location: z.string().min(3, "Where was it last seen?"),
+  dateLost: z.string().min(1, "When?"),
   imageUrl: z.string().optional(),
   reward: z.string().optional(),
-  contactPhone: z.string().min(10, "Valid phone number required").regex(/^(\+?250|0)7[0-9]{8}$/, "Must be a valid Rwanda phone number"),
-  contactName: z.string().min(2, "Name is required"),
+  contactPhone: z.string().min(10, "Valid phone required").regex(/^(\+?250|0)7[0-9]{8}$/, "Rwanda number required"),
+  contactName: z.string().min(2, "Your name"),
 });
 
 type FormData = z.infer<typeof lostItemSchema>;
 
-const STEPS = [
-  { id: 'details', title: 'What did you lose?', icon: Tag },
-  { id: 'location', title: 'Where & When?', icon: MapPin },
-  { id: 'contact', title: 'Contact & Reward', icon: User },
-];
-
 const CATEGORIES = [
-  { id: "id_document", label: "ID / Passport", icon: FileText },
-  { id: "electronics", label: "Electronics", icon: Smartphone },
-  { id: "wallet", label: "Wallet / Purse", icon: Wallet },
-  { id: "keys", label: "Keys", icon: Key },
-  { id: "clothing", label: "Clothing", icon: Shirt },
-  { id: "other", label: "Other Item", icon: MoreHorizontal },
+  { id: "electronics", label: "Phone/Laptop", emoji: "📱" },
+  { id: "id_document", label: "ID/Passport", emoji: "🪪" },
+  { id: "wallet", label: "Wallet/Bag", emoji: "👜" },
+  { id: "keys", label: "Keys", emoji: "🔑" },
+  { id: "clothing", label: "Clothes", emoji: "👕" },
+  { id: "other", label: "Other", emoji: "📦" },
 ];
 
 export default function ReportLost() {
-  const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -93,36 +73,30 @@ export default function ReportLost() {
     mode: "onChange",
   });
 
-  const nextStep = async () => {
-    let fieldsToValidate: (keyof FormData)[] = [];
-
-    if (step === 0) fieldsToValidate = ['category', 'title', 'description'];
-    if (step === 1) fieldsToValidate = ['location', 'dateLost', 'imageUrl'];
-    if (step === 2) fieldsToValidate = ['contactName', 'contactPhone', 'reward'];
-
-    const isValid = await form.trigger(fieldsToValidate);
-
-    if (isValid) {
-      setStep((s) => Math.min(s + 1, STEPS.length));
-    }
-  };
-
-  const prevStep = () => setStep((s) => Math.max(s - 1, 0));
-
-  // ... inside component
-
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      // Save data to session storage for the payment page
-      sessionStorage.setItem('pendingLostItem', JSON.stringify(data));
-      // Redirect to payment
-      setLocation(`/payment?amount=1000`);
+      const payload = {
+        category: data.category,
+        title: data.title,
+        description: data.description,
+        location: data.location,
+        dateLost: data.dateLost,
+        imageUrls: data.imageUrl ? [data.imageUrl] : [],
+        reward: data.reward ? data.reward.replace(/[^0-9.]/g, '') : null,
+        contactName: data.contactName,
+        contactPhone: data.contactPhone,
+        priceTier: "standard" as const,
+      };
+
+      const res = await apiRequest("POST", "/api/lost-items", payload);
+      const item = await res.json();
+      setLocation(`/payment?itemId=${item.id}&amount=1000`);
     } catch (e) {
       console.error(e);
       toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
+        title: "Something went wrong",
+        description: "Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -130,103 +104,167 @@ export default function ReportLost() {
     }
   };
 
+  const selectedCategory = form.watch("category");
+
   return (
-    <div className="min-h-screen bg-background flex flex-col font-sans">
-      {/* Minimal Header */}
-      <header className="glass-nav z-10">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
+      {/* Floating Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border-b border-slate-200/50 dark:border-slate-700/50">
+        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/">
-            <Button variant="ghost" size="sm" className="-ml-2 hover:bg-muted/50 rounded-full px-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Cancel
+            <Button variant="ghost" size="sm" className="gap-2 text-slate-600 hover:text-slate-900 dark:text-slate-300">
+              <ArrowLeft className="w-4 h-4" />
+              Back
             </Button>
           </Link>
-          <div className="flex flex-col items-end">
-            <span className="text-xs font-semibold text-destructive uppercase tracking-wider">Step {step + 1} of {STEPS.length}</span>
-            <span className="text-sm font-medium text-foreground">{STEPS[step].title}</span>
+          <div className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            Report Lost Item
           </div>
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
-        {/* Progress Bar */}
-        <div className="mb-10">
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-destructive"
-              initial={{ width: "0%" }}
-              animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
-            />
-          </div>
-        </div>
+      <main className="pt-20 pb-8 px-4">
+        <div className="max-w-xl mx-auto">
+          {/* Hero Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-8"
+          >
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-white dark:via-slate-200 dark:to-white bg-clip-text text-transparent mb-2">
+              Lost something?
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400">
+              Let's help you find it. Fill in the details below.
+            </p>
+          </motion.div>
 
-        {/* Cost Alert */}
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-8 flex gap-4 items-center shadow-sm">
-          <div className="bg-amber-100 p-2 rounded-full text-amber-600">
-            <AlertCircle className="w-5 h-5" />
-          </div>
-          <p className="text-sm text-amber-800 leading-relaxed">
-            Note: Reporting a lost item costs <strong>1,000 RWF</strong>. This fee helps us verify listings and prevent spam.
-          </p>
-        </div>
+          {/* Fee Notice */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1 }}
+            className="mb-8 p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 dark:border-amber-800/50"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-xl">
+                <Coins className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-100">Listing fee: 1,000 RWF</p>
+                <p className="text-xs text-amber-700 dark:text-amber-300">Helps verify listings & prevents spam</p>
+              </div>
+            </div>
+          </motion.div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <AnimatePresence mode="wait">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Category Selection - Emoji Pills */}
               <motion.div
-                key={step}
-                initial={{ x: 20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -20, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-6"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
               >
-                {step === 0 && (
-                  <div className="space-y-8">
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-slate-700 dark:text-slate-300">What type of item?</FormLabel>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {CATEGORIES.map((cat) => (
+                          <motion.button
+                            key={cat.id}
+                            type="button"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => field.onChange(cat.id)}
+                            className={cn(
+                              "px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2",
+                              field.value === cat.id
+                                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-lg shadow-slate-900/20"
+                                : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md"
+                            )}
+                          >
+                            <span className="text-base">{cat.emoji}</span>
+                            {cat.label}
+                          </motion.button>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </motion.div>
+
+              {/* Main Form Card */}
+              <AnimatePresence>
+                {selectedCategory && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-5 p-6 rounded-3xl bg-white dark:bg-slate-800/50 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50 border border-slate-100 dark:border-slate-700/50"
+                  >
+                    {/* Title */}
                     <FormField
                       control={form.control}
-                      name="category"
+                      name="title"
                       render={({ field }) => (
-                        <FormItem className="space-y-4">
-                          <FormLabel className="text-lg font-semibold">Select Category</FormLabel>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {CATEGORIES.map((cat) => (
-                              <div
-                                key={cat.id}
-                                onClick={() => field.onChange(cat.id)}
-                                className={cn(
-                                  "cursor-pointer flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 hover:scale-[1.02]",
-                                  field.value === cat.id
-                                    ? "border-destructive bg-destructive/5 shadow-md"
-                                    : "border-muted bg-card hover:border-destructive/30 hover:shadow-sm"
-                                )}
-                              >
-                                <cat.icon className={cn(
-                                  "w-8 h-8 mb-3",
-                                  field.value === cat.id ? "text-destructive" : "text-muted-foreground"
-                                )} />
-                                <span className={cn(
-                                  "text-sm font-medium text-center leading-tight",
-                                  field.value === cat.id ? "text-destructive" : "text-foreground"
-                                )}>{cat.label}</span>
-                              </div>
-                            ))}
-                          </div>
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                            <Package className="w-4 h-4" />
+                            Item name
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g. Blue Samsung Galaxy S21"
+                              className="h-12 bg-slate-50 dark:bg-slate-900/50 border-0 rounded-xl focus:ring-2 focus:ring-slate-900 dark:focus:ring-white text-base"
+                              {...field}
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    <div className="space-y-4">
+                    {/* Description */}
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-slate-600 dark:text-slate-400">Description</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Color, brand, unique marks, case style..."
+                              className="min-h-[80px] bg-slate-50 dark:bg-slate-900/50 border-0 rounded-xl resize-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Location & Date Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
-                        name="title"
+                        name="location"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base">What exactly did you lose?</FormLabel>
+                            <FormLabel className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                              <MapPin className="w-4 h-4" />
+                              Last seen
+                            </FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g. Blue Samsung Galaxy S21" className="h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all" {...field} />
+                              <Input
+                                placeholder="Kigali Heights"
+                                className="h-12 bg-slate-50 dark:bg-slate-900/50 border-0 rounded-xl focus:ring-2 focus:ring-slate-900 dark:focus:ring-white"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -235,14 +273,17 @@ export default function ReportLost() {
 
                       <FormField
                         control={form.control}
-                        name="description"
+                        name="dateLost"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base">Any details?</FormLabel>
+                            <FormLabel className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                              <Calendar className="w-4 h-4" />
+                              When
+                            </FormLabel>
                             <FormControl>
-                              <Textarea
-                                placeholder="Describe features like color, brand, condition, or unique marks..."
-                                className="min-h-[120px] resize-none text-base rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all p-4"
+                              <Input
+                                type="date"
+                                className="h-12 bg-slate-50 dark:bg-slate-900/50 border-0 rounded-xl focus:ring-2 focus:ring-slate-900 dark:focus:ring-white"
                                 {...field}
                               />
                             </FormControl>
@@ -251,106 +292,24 @@ export default function ReportLost() {
                         )}
                       />
                     </div>
-                  </div>
-                )}
 
-                {step === 1 && (
-                  <div className="space-y-8">
-                    <FormField
-                      control={form.control}
-                      name="location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-lg font-semibold">Last Seen Location</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <MapPin className="absolute left-4 top-4 h-6 w-6 text-muted-foreground" />
-                              <Input
-                                placeholder="e.g. Near Kigali Heights, Kimihurura"
-                                className="pl-12 h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all"
-                                {...field}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="dateLost"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-lg font-semibold">Date Lost</FormLabel>
-                          <FormControl>
-                            <Input type="date" className="h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="imageUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-lg font-semibold">Reference Photo (Optional)</FormLabel>
-                          <div className="mb-2 text-sm text-muted-foreground">
-                            If you have a photo of the item (or a similar one), upload it here.
-                          </div>
-                          <FormControl>
-                            <ImageUpload
-                              value={field.value || null}
-                              onChange={field.onChange}
-                              className="bg-muted/30 border-muted-foreground/20"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-
-                {step === 2 && (
-                  <div className="space-y-8">
-                    <FormField
-                      control={form.control}
-                      name="reward"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-lg font-semibold">Reward (Optional)</FormLabel>
-                          <div className="mb-2 text-sm text-muted-foreground">
-                            Offering a reward can encourage finders to return your item.
-                          </div>
-                          <FormControl>
-                            <div className="relative">
-                              <Gift className="absolute left-4 top-4 h-6 w-6 text-amber-500" />
-                              <Input
-                                placeholder="e.g. 5000 RWF"
-                                className="pl-12 h-14 text-lg rounded-xl bg-amber-50 border-amber-200 focus:border-amber-400 focus:ring-amber-200 transition-all text-amber-900 placeholder:text-amber-900/40 font-medium"
-                                {...field}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="h-px bg-border my-6" />
-
-                    <div className="space-y-4">
+                    {/* Contact Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="contactName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base">Your Name</FormLabel>
+                            <FormLabel className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                              <User className="w-4 h-4" />
+                              Your name
+                            </FormLabel>
                             <FormControl>
-                              <Input placeholder="John Doe" className="h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all" {...field} />
+                              <Input
+                                placeholder="John Doe"
+                                className="h-12 bg-slate-50 dark:bg-slate-900/50 border-0 rounded-xl focus:ring-2 focus:ring-slate-900 dark:focus:ring-white"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -362,69 +321,89 @@ export default function ReportLost() {
                         name="contactPhone"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base">Mobile Number</FormLabel>
+                            <FormLabel className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                              <Phone className="w-4 h-4" />
+                              Phone
+                            </FormLabel>
                             <FormControl>
-                              <div className="relative">
-                                <Phone className="absolute left-4 top-4 h-6 w-6 text-muted-foreground" />
-                                <Input
-                                  type="tel"
-                                  placeholder="078 000 0000"
-                                  className="pl-12 h-14 text-lg rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-input transition-all"
-                                  {...field}
-                                />
-                              </div>
+                              <Input
+                                type="tel"
+                                placeholder="078 000 0000"
+                                className="h-12 bg-slate-50 dark:bg-slate-900/50 border-0 rounded-xl focus:ring-2 focus:ring-slate-900 dark:focus:ring-white"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
-                  </div>
+
+                    {/* Optional: Photo Upload - Compact */}
+                    <FormField
+                      control={form.control}
+                      name="imageUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                            <Camera className="w-4 h-4" />
+                            Photo <span className="text-slate-400 font-normal">(optional)</span>
+                          </FormLabel>
+                          <FormControl>
+                            <ImageUpload
+                              value={field.value || null}
+                              onChange={field.onChange}
+                              className="h-24 bg-slate-50 dark:bg-slate-900/50 border-dashed border-2 border-slate-200 dark:border-slate-700 rounded-xl hover:border-slate-400 dark:hover:border-slate-500 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </motion.div>
                 )}
-              </motion.div>
-            </AnimatePresence>
+              </AnimatePresence>
 
-            <div className="flex gap-4 pt-8">
-              {step > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={prevStep}
-                  className="flex-1 h-14 rounded-xl text-base font-medium border-border/50 bg-background hover:bg-muted"
-                  disabled={isSubmitting}
-                >
-                  Back
-                </Button>
-              )}
-
-              {step < STEPS.length - 1 ? (
-                <Button
-                  type="button"
-                  onClick={nextStep}
-                  className="flex-1 h-14 rounded-xl text-base font-semibold shadow-lg shadow-destructive/25 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                >
-                  Continue
-                  <ChevronRight className="ml-2 w-5 h-5" />
-                </Button>
-              ) : (
+              {/* Submit Button */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
                 <Button
                   type="submit"
-                  className="flex-1 h-14 rounded-xl text-base font-semibold shadow-lg shadow-destructive/25 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                  disabled={isSubmitting}
+                  size="lg"
+                  disabled={isSubmitting || !selectedCategory}
+                  className={cn(
+                    "w-full h-14 rounded-2xl text-base font-semibold transition-all duration-300",
+                    selectedCategory
+                      ? "bg-gradient-to-r from-slate-900 to-slate-700 hover:from-slate-800 hover:to-slate-600 dark:from-white dark:to-slate-200 dark:text-slate-900 dark:hover:from-slate-100 dark:hover:to-slate-300 shadow-xl shadow-slate-900/20 dark:shadow-white/20"
+                      : "bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed"
+                  )}
                 >
                   {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Processing...
-                    </>
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    "Proceed to Payment"
+                    <>
+                      <Send className="w-5 h-5 mr-2" />
+                      Submit & Pay 1,000 RWF
+                    </>
                   )}
                 </Button>
-              )}
-            </div>
-          </form>
-        </Form>
+              </motion.div>
+
+              {/* Trust Badge */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="text-center text-xs text-slate-400 dark:text-slate-500"
+              >
+                🔒 Secure payment via Flutterwave
+              </motion.p>
+            </form>
+          </Form>
+        </div>
       </main>
     </div>
   );

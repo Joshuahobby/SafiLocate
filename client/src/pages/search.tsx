@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { ItemCard, type Item } from "@/components/item-card";
 
 
@@ -44,26 +44,36 @@ export default function SearchPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("");
 
-  const { data: items = [], isLoading } = useQuery<Item[]>({
-    queryKey: ["/api/items", { search: searchQuery, category: categoryFilter, location: locationFilter }],
+  const fetchItems = async ({ pageParam = 1 }) => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set("search", searchQuery);
+    if (categoryFilter && categoryFilter !== "all") params.set("category", categoryFilter);
+    if (locationFilter) params.set("location", locationFilter);
+    params.set("page", pageParam.toString());
+
+    const res = await fetch(`/api/items?${params.toString()}`);
+    if (!res.ok) throw new Error("Failed to fetch items");
+    return res.json();
+  };
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status
+  } = useInfiniteQuery({
+    queryKey: ['/api/items', searchQuery, categoryFilter, locationFilter],
+    queryFn: fetchItems,
+    getNextPageParam: (lastPage, allPages) => {
+      // If last page was empty, no more pages.
+      return lastPage.length > 0 ? allPages.length + 1 : undefined;
+    },
+    initialPageParam: 1,
   });
 
-  // Client-side filtering logic moved to server/API or simplified below
-
-  const queryParams = new URLSearchParams();
-  if (searchQuery) queryParams.set("search", searchQuery);
-  if (categoryFilter && categoryFilter !== "all") queryParams.set("category", categoryFilter);
-  if (locationFilter) queryParams.set("location", locationFilter);
-
-  const queryString = queryParams.toString();
-  const queryKey = `/api/items?${queryString}`;
-
-  const { data: serverItems = [] } = useQuery<Item[]>({
-    queryKey: [queryKey], // The default fetcher will use this string as URL
-  });
-
-  // Re-assign filteredItems to serverItems (since server is doing the work)
-  const filteredItems = serverItems;
+  const filteredItems = data?.pages.flat() || [];
+  const isLoading = status === 'pending';
 
 
   return (
@@ -213,6 +223,19 @@ export default function SearchPage() {
             </div>
           )}
         </div>
+
+        {/* Load More */}
+        {hasNextPage && (
+          <div className="mt-8 flex justify-center">
+            <Button
+              variant="outline"
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
+            >
+              {isFetchingNextPage ? "Loading..." : "Load More"}
+            </Button>
+          </div>
+        )}
       </main>
     </div>
   );
