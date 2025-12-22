@@ -78,6 +78,7 @@ export const lostItems = pgTable("lost_items", {
   location: varchar("location", { length: 200 }).notNull(), // Last seen location
   dateLost: date("date_lost").notNull(),
   imageUrls: text("image_urls").array(), // Array of image URLs (max 3)
+  identifier: varchar("identifier", { length: 100 }), // IMEI, Serial Number, Document ID, etc.
   reward: decimal("reward", { precision: 10, scale: 2 }), // Optional reward amount
   contactName: varchar("contact_name", { length: 100 }).notNull(),
   contactPhone: varchar("contact_phone", { length: 20 }).notNull(),
@@ -222,6 +223,7 @@ export const insertLostItemSchema = createInsertSchema(lostItems).pick({
   location: true,
   dateLost: true,
   imageUrls: true,
+  identifier: true,
   reward: true,
   contactName: true,
   contactPhone: true,

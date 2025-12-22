@@ -175,13 +175,13 @@ export default function ReportFound() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col font-sans">
-      {/* Minimal Header */}
-      <header className="glass-nav z-10">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Glassmorphic Header - Matches Search Page */}
+      <header className="border-b border-border/50 sticky top-0 bg-white/80 dark:bg-black/80 backdrop-blur-md z-50 shadow-sm transition-all duration-300">
+        <div className="container mx-auto px-8 lg:px-12 h-20 flex items-center justify-between py-4">
           <Link href="/">
-            <Button variant="ghost" size="sm" className="-ml-2 hover:bg-muted/50 rounded-full px-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
+            <Button variant="ghost" size="sm" className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
               Cancel
             </Button>
           </Link>
@@ -192,7 +192,7 @@ export default function ReportFound() {
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
+      <main className="flex-1 container mx-auto px-8 lg:px-12 py-8 max-w-3xl">
         {/* Progress Bar */}
         <div className="mb-10">
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">

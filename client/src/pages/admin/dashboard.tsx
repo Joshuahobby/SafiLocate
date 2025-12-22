@@ -744,6 +744,7 @@ export default function AdminDashboard() {
                                         <TableHeader className="bg-slate-50">
                                             <TableRow>
                                                 <TableHead>Item</TableHead>
+                                                <TableHead>Identifier</TableHead>
                                                 <TableHead>Status</TableHead>
                                                 <TableHead>Location</TableHead>
                                                 <TableHead className="text-right">Actions</TableHead>
@@ -752,7 +753,7 @@ export default function AdminDashboard() {
                                         <TableBody>
                                             {filteredItems.length === 0 ? (
                                                 <TableRow>
-                                                    <TableCell colSpan={4} className="text-center py-8 text-slate-500">
+                                                    <TableCell colSpan={5} className="text-center py-8 text-slate-500">
                                                         No items found matching your search.
                                                     </TableCell>
                                                 </TableRow>
@@ -764,6 +765,11 @@ export default function AdminDashboard() {
                                                                 <span>{item.title}</span>
                                                                 <span className="text-xs text-slate-400 uppercase">{item.type}</span>
                                                             </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <span className="font-mono text-xs text-slate-600">
+                                                                {(item as any).identifier || '-'}
+                                                            </span>
                                                         </TableCell>
                                                         <TableCell>
                                                             <Badge variant="secondary" className={

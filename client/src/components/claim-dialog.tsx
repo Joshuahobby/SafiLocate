@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { insertClaimSchema, type InsertClaim } from "@shared/schema";
 import { z } from "zod";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,8 +25,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 interface ClaimDialogProps {
     itemId: string;
@@ -36,6 +37,7 @@ interface ClaimDialogProps {
 
 export function ClaimDialog({ itemId, itemType, trigger }: ClaimDialogProps) {
     const { toast } = useToast();
+    const { user } = useAuth();
     const [open, setOpen] = useState(false);
 
     const formSchema = insertClaimSchema.extend({
@@ -48,13 +50,22 @@ export function ClaimDialog({ itemId, itemType, trigger }: ClaimDialogProps) {
         defaultValues: {
             itemId,
             itemType,
-            claimantName: "",
-            claimantPhone: "",
-            claimantEmail: "",
+            claimantName: user?.username || "",
+            claimantPhone: user?.phone || "",
+            claimantEmail: user?.email || "",
             description: "",
             evidencePhotos: []
         },
     });
+
+    // Update form values when user data becomes available
+    useEffect(() => {
+        if (user) {
+            if (user.username) form.setValue("claimantName", user.username);
+            if (user.phone) form.setValue("claimantPhone", user.phone);
+            if (user.email) form.setValue("claimantEmail", user.email || "");
+        }
+    }, [user, form]);
 
     const mutation = useMutation({
         mutationFn: async (data: z.infer<typeof formSchema>) => {

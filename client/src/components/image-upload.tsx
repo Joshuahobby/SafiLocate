@@ -11,15 +11,40 @@ interface ImageUploadProps {
 
 export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(value);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
+      // 1. Show local preview immediately
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setPreview(result);
-        onChange(result);
+      reader.onloadend = async () => {
+        const base64String = reader.result as string;
+        setPreview(base64String);
+
+        // 2. Upload to server
+        setIsUploading(true);
+        try {
+          const res = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image: base64String }),
+          });
+
+          if (!res.ok) throw new Error("Upload failed");
+
+          const data = await res.json();
+          // 3. Pass the SERVER URL to the parent form
+          onChange(data.url);
+        } catch (error) {
+          console.error("Upload error:", error);
+          // Revert preview on failure? Or just let user retry.
+          // For now, clear it so they know it failed.
+          setPreview(null);
+          onChange(null);
+        } finally {
+          setIsUploading(false);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -31,7 +56,8 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
       'image/*': ['.png', '.jpg', '.jpeg', '.webp']
     },
     maxFiles: 1,
-    multiple: false
+    multiple: false,
+    disabled: isUploading
   });
 
   const removeImage = (e: React.MouseEvent) => {
@@ -45,43 +71,51 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
       <div
         {...getRootProps()}
         className={cn(
-          "relative border-2 border-dashed rounded-xl p-6 transition-all cursor-pointer h-64 flex flex-col items-center justify-center text-center gap-4 bg-muted/20 hover:bg-muted/40",
+          "relative border-2 border-dashed rounded-xl transition-all cursor-pointer flex items-center gap-3 bg-muted/20 hover:bg-muted/40 p-4",
           isDragActive && "border-primary bg-primary/5 ring-2 ring-primary/20",
           !preview && "border-muted-foreground/25",
-          preview && "border-transparent p-0 overflow-hidden bg-background"
+          preview && "border-primary/50 bg-primary/5"
         )}
       >
         <input {...getInputProps()} />
-        
+
         {preview ? (
-          <div className="relative w-full h-full group">
-            <img 
-              src={preview} 
-              alt="Upload preview" 
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <p className="text-white font-medium">Click to change</p>
+          <>
+            <div className="shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted border border-border">
+              <img
+                src={preview}
+                alt="Thumbnail"
+                className="w-full h-full object-cover"
+              />
             </div>
-            <button
-              onClick={removeImage}
-              className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full shadow-sm hover:bg-destructive/90 transition-colors z-10"
-              type="button"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Image uploaded</p>
+              <p className="text-xs text-muted-foreground">Click to change</p>
+            </div>
+            {isUploading && (
+              <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin shrink-0"></div>
+            )}
+            {!isUploading && (
+              <button
+                onClick={removeImage}
+                className="p-1.5 bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-colors shrink-0"
+                type="button"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </>
         ) : (
           <>
-            <div className="p-4 rounded-full bg-primary/10 text-primary">
-              <Upload className="w-8 h-8" />
+            <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+              <Upload className="w-5 h-5" />
             </div>
-            <div className="space-y-1">
+            <div className="flex-1">
               <p className="text-sm font-medium text-foreground">
                 {isDragActive ? "Drop the image here" : "Click to upload or drag and drop"}
               </p>
               <p className="text-xs text-muted-foreground">
-                SVG, PNG, JPG or GIF (max. 5MB)
+                PNG, JPG, WEBP (max. 5MB)
               </p>
             </div>
           </>

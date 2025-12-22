@@ -1,0 +1,7 @@
+Testing Cloudinary Integration...
+Dotenv parsed keys: DATABASE_URL,PORT,FLUTTERWAVE_PUBLIC_KEY,FLUTTERWAVE_SECRET_KEY,FLUTTERWAVE_ENCRYPTION_KEY,CLOUDINARY_CLOUD_NAME,CLOUDINARY_API_KEY,CLOUDINARY_API_SECRET
+CLOUDINARY_URL present in process.env: false
+Environment keys with 'CLOUD': CLOUDINARY_API_KEY,CLOUDINARY_API_SECRET,CLOUDINARY_CLOUD_NAME
+Attempting upload...
+Upload Result: /uploads/deddb4fa-daa6-40a1-981d-ccd183ef2a5e.png
+WARNING: Image returned as base64 or local path.

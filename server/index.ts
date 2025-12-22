@@ -27,7 +27,23 @@ app.use(
 app.use(express.urlencoded({ extended: false, limit: "50mb" }));
 
 // Security Middleware
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      // Allow scripts from self, unsafe-inline (often needed for React/Vite), and external service checks
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://checkout.flutterwave.com", "https://*.googleapis.com"],
+      // Allow connections to self, ws (for HMR), and external services
+      connectSrc: ["'self'", "ws:", "wss:", "https://api.flutterwave.com", "https://*.googleapis.com"],
+      // Allow images from self, data (base64 replacement), and Cloudinary
+      imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://*.google.com"],
+      // Allow styles
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      // Allow fonts
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+    },
+  },
+}));
 
 // Rate limiting - more lenient in development
 const isDev = process.env.NODE_ENV !== "production";

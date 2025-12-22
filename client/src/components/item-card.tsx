@@ -24,7 +24,7 @@ export function ItemCard({ id, title, category, location, date, type, image, cla
         className
       )}>
         {/* Image Area */}
-        <div className="aspect-[4/3] bg-muted relative overflow-hidden">
+        <div className="aspect-[3/2] bg-muted relative overflow-hidden">
           <div className="absolute top-3 right-3 z-10">
             <Badge
               variant="secondary"
@@ -50,18 +50,18 @@ export function ItemCard({ id, title, category, location, date, type, image, cla
         </div>
 
         {/* Content Area */}
-        <div className="p-5 flex-1 flex flex-col">
+        <div className="p-4 flex-1 flex flex-col">
           <div className="mb-auto">
-            <h3 className="font-heading font-semibold text-lg line-clamp-1 mb-2 group-hover:text-primary transition-colors">
+            <h3 className="font-heading font-semibold text-base line-clamp-1 mb-1.5 group-hover:text-primary transition-colors">
               {title}
             </h3>
-            <div className="flex items-center text-sm text-muted-foreground mb-4">
+            <div className="flex items-center text-sm text-muted-foreground mb-2">
               <MapPin className="w-3.5 h-3.5 mr-1.5 shrink-0 text-primary/60" />
               <span className="truncate">{location}</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-border/50 mt-2">
+          <div className="flex items-center justify-between pt-3 border-t border-border/50 mt-2">
             <span className="text-xs text-muted-foreground flex items-center bg-secondary/50 px-2 py-1 rounded-md">
               <Calendar className="w-3 h-3 mr-1.5" />
               {date}

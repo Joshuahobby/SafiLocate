@@ -40,17 +40,7 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL environment variable is required");
 }
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000, // Increased for cloud databases
-  ssl: {
-    rejectUnauthorized: false, // Required for Neon
-  },
-});
-
-const db = drizzle(pool);
+import { pool, db } from "./db";
 
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -588,25 +578,125 @@ export class PgStorage implements IStorage {
     page?: number;
     limit?: number;
   }): Promise<{ items: (FoundItem | LostItem)[]; total: number }> {
-    // This is a simplified search - full-text search will be implemented later
     const page = filters.page || 1;
     const limit = filters.limit || 20;
     const offset = (page - 1) * limit;
+    const searchTerm = filters.query ? `%${filters.query}%` : '%';
+    const typeFilter = filters.type || 'all';
 
-    const conditions: any[] = [];
-
-    if (filters.category) {
-      // Would need to search both tables
+    // 1. Build common where clauses
+    let categoryClause = sql``;
+    if (filters.category && filters.category !== 'all') {
+      categoryClause = sql`AND category = ${filters.category}`;
     }
+
+    let locationClause = sql``;
     if (filters.location) {
-      // Would need to search both tables
+      locationClause = sql`AND location ILIKE ${`%${filters.location}%`}`;
     }
 
-    // For now, return empty - full implementation in Phase 2
-    return {
-      items: [],
-      total: 0,
-    };
+    // 2. Define the scoring logic (Simple weighting)
+    // Title match: 10 points
+    // Tag match: 5 points
+    // Description match: 1 point
+    const scoreCalculation = sql`
+      (
+        CASE WHEN title ILIKE ${searchTerm} THEN 10 ELSE 0 END +
+        CASE WHEN array_to_string(tags, ' ') ILIKE ${searchTerm} THEN 5 ELSE 0 END +
+        CASE WHEN description ILIKE ${searchTerm} THEN 1 ELSE 0 END
+      ) as relevance_score
+    `;
+
+    // 3. Define the base queries for Union
+    const queries: any[] = [];
+
+    // Found Items Query
+    if (typeFilter === 'all' || typeFilter === 'found') {
+      queries.push(sql`
+        SELECT 
+          id, category, title, description, location, 
+          date_found as date, 
+          image_urls, contact_name, contact_phone, 
+          status, tags, created_at, 
+          'found' as type,
+          ${scoreCalculation}
+        FROM found_items
+        WHERE status = 'active'
+        AND (
+          title ILIKE ${searchTerm} OR 
+          description ILIKE ${searchTerm} OR 
+          location ILIKE ${searchTerm} OR
+          array_to_string(tags, ' ') ILIKE ${searchTerm}
+        )
+        ${categoryClause}
+        ${locationClause}
+      `);
+    }
+
+    // Lost Items Query
+    if (typeFilter === 'all' || typeFilter === 'lost') {
+      queries.push(sql`
+        SELECT 
+          id, category, title, description, location, 
+          date_lost as date, 
+          image_urls, contact_name, contact_phone, 
+          status, tags, created_at, 
+          'lost' as type,
+          ${scoreCalculation}
+        FROM lost_items
+        WHERE status = 'active'
+        AND (
+          title ILIKE ${searchTerm} OR 
+          description ILIKE ${searchTerm} OR 
+          location ILIKE ${searchTerm} OR
+          array_to_string(tags, ' ') ILIKE ${searchTerm}
+        )
+        ${categoryClause}
+        ${locationClause}
+      `);
+    }
+
+    if (queries.length === 0) return { items: [], total: 0 };
+
+    // 4. Combine with UNION ALL
+    const finalQuery = sql`
+      WITH combined_results AS (
+        ${queries[0]}
+        ${queries.length > 1 ? sql`UNION ALL ${queries[1]}` : sql``}
+      )
+      SELECT *, COUNT(*) OVER() as full_count 
+      FROM combined_results
+      ORDER BY relevance_score DESC, created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+
+    const result = await db.execute(finalQuery);
+
+    // 5. Map results
+    const items = result.rows.map((row: any) => {
+      // Map back to proper objects (snake_case from raw SQL to camelCase if needed, 
+      // but Drizzle/pg driver usually returns lowercase column names. 
+      // We need to map them manually to match our schema types if raw SQL is used)
+      return {
+        id: row.id,
+        category: row.category,
+        title: row.title,
+        description: row.description,
+        location: row.location,
+        [row.type === 'found' ? 'dateFound' : 'dateLost']: row.date, // Restore date field name
+        imageUrls: row.image_urls,
+        contactName: row.contact_name,
+        contactPhone: row.contact_phone,
+        status: row.status,
+        tags: row.tags,
+        createdAt: row.created_at,
+        type: row.type,
+      };
+    });
+
+    const total = result.rows.length > 0 ? Number(result.rows[0].full_count) : 0;
+
+    return { items: items as any, total };
   }
 
   async getStats() {

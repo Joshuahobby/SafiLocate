@@ -3,8 +3,10 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertFoundItemSchema, insertLostItemSchema, insertClaimSchema } from "@shared/schema";
 import { paymentRoutes } from "./routes/payment";
+import { uploadRoutes } from "./routes/upload";
 import { imageService } from "./services/image.service";
 import { aiService } from "./services/ai.service";
+import { matchingService } from "./services/matching.service";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -51,6 +53,12 @@ export async function registerRoutes(
   // Register Payment Routes
   app.use("/api/payments", paymentRoutes);
 
+  // Register Payment Routes
+  app.use("/api/payments", paymentRoutes);
+
+  // Register Upload Route
+  app.use("/api/upload", uploadRoutes);
+
   // Found Items
   app.post("/api/found-items", async (req, res) => {
     try {
@@ -61,6 +69,12 @@ export async function registerRoutes(
       const tags = await aiService.generateTags(data.title, data.description);
       const item = await storage.createFoundItem({ ...data, tags });
       res.json(item);
+
+      // Trigger async processes (AI Matching)
+      // We don't await this so it doesn't block the response
+      matchingService.findPotentialMatches(item, 'found').catch(err =>
+        console.error("Error in background matching service:", err)
+      );
     } catch (error) {
       res.status(400).json({ error: "Invalid data" });
     }
@@ -76,6 +90,12 @@ export async function registerRoutes(
       const tags = await aiService.generateTags(data.title, data.description);
       const item = await storage.createLostItem({ ...data, tags });
       res.json(item);
+
+      // Trigger async processes (AI Matching)
+      // We don't await this so it doesn't block the response
+      matchingService.findPotentialMatches(item, 'lost').catch(err =>
+        console.error("Error in background matching service:", err)
+      );
     } catch (error) {
       if (error instanceof Error) {
         console.error("Lost item validation/creation error:", error);
@@ -158,13 +178,36 @@ export async function registerRoutes(
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
 
+    // Optimized Search using Union and Scoring
+    if (search) {
+      const result = await storage.searchItems({
+        query: search,
+        type: (type as "found" | "lost" | "all") || 'all',
+        category: category !== 'all' ? category : undefined,
+        location,
+        page,
+        limit
+      });
+
+      const mappedItems = result.items.map(i => {
+        const isFound = (i as any).type === 'found';
+        return {
+          ...i,
+          date: isFound ? (i as FoundItem).dateFound : (i as LostItem).dateLost,
+          image: i.imageUrls?.[0]
+        };
+      });
+
+      return res.json(mappedItems.map(i => sanitizeItem(i, (req as any).user)));
+    }
+
     let foundItems: any[] = [];
     let lostItems: any[] = [];
 
     // Fetch Found Items
     if (!type || type === 'found' || type === 'all') {
       const result = await storage.listFoundItems({
-        search,
+        search, // This won't be used if we enter the block above, but keeping for safety if no search term but filters exist
         category: category !== 'all' ? category : undefined,
         location,
         page,

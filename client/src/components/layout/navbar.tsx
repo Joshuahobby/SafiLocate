@@ -1,4 +1,5 @@
 import { Link, useLocation } from "wouter";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, Moon, Sun, User, LogOut, Settings } from "lucide-react";
 import {
@@ -26,8 +27,23 @@ export function Navbar() {
 
     const isAdmin = user?.role === 'admin' || user?.role === 'moderator';
 
+    const [isScrolled, setIsScrolled] = React.useState(false);
+
+    React.useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 10);
+        };
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
     return (
-        <header className="glass-nav transition-all duration-200">
+        <header
+            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+                ? 'h-16 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-border/50 shadow-sm'
+                : 'h-20 bg-transparent border-transparent'
+                }`}
+        >
             <div className="container mx-auto px-4 h-16 flex items-center justify-between relative z-10">
                 <Link href="/">
                     <div className="flex items-center gap-2 cursor-pointer">
@@ -38,15 +54,26 @@ export function Navbar() {
                     </div>
                 </Link>
 
-                <nav className="hidden md:flex items-center gap-8">
-                    <Link href="/" className={`text-sm font-medium transition-colors hover:text-primary ${location === '/' ? 'text-primary' : 'text-muted-foreground'}`}>
+                <nav className="hidden md:flex items-center gap-6">
+                    <Link href="/" className={`text-sm font-medium transition-colors hover:text-primary relative group ${location === '/' ? 'text-primary' : 'text-muted-foreground'}`}>
                         Home
+                        {location === '/' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></span>}
                     </Link>
-                    <Link href="/search" className={`text-sm font-medium transition-colors hover:text-primary ${location === '/search' ? 'text-primary' : 'text-muted-foreground'}`}>
+                    <Link href="/search" className={`text-sm font-medium transition-colors hover:text-primary relative group ${location === '/search' ? 'text-primary' : 'text-muted-foreground'}`}>
                         Search
+                        {location === '/search' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></span>}
                     </Link>
-                    <Link href="/about" className={`text-sm font-medium transition-colors hover:text-primary ${location === '/about' ? 'text-primary' : 'text-muted-foreground'}`}>
+                    <Link href="/report-lost" className={`text-sm font-medium transition-colors hover:text-primary relative group ${location === '/report-lost' ? 'text-primary' : 'text-muted-foreground'}`}>
+                        Report Lost
+                        {location === '/report-lost' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></span>}
+                    </Link>
+                    <Link href="/report-found" className={`text-sm font-medium transition-colors hover:text-primary relative group ${location === '/report-found' ? 'text-primary' : 'text-muted-foreground'}`}>
+                        Report Found
+                        {location === '/report-found' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></span>}
+                    </Link>
+                    <Link href="/about" className={`text-sm font-medium transition-colors hover:text-primary relative group ${location === '/about' ? 'text-primary' : 'text-muted-foreground'}`}>
                         How it Works
+                        {location === '/about' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></span>}
                     </Link>
                 </nav>
 
