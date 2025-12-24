@@ -35,6 +35,9 @@ import {
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { LISTING_DURATION_DAYS, RECEIPT_PREFIXES } from "@shared/constants";
+import { matchingService } from "./services/matching.service";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL environment variable is required");
@@ -110,6 +113,16 @@ export class PgStorage implements IStorage {
     return updatedUser;
   }
 
+  async updateUserProfile(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const { id: _id, createdAt: _createdAt, ...updateData } = updates as any;
+    const [updatedUser] = await db
+      .update(users)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+
   // ============ Found Items ============
   async createFoundItem(item: InsertFoundItem & { tags?: string[] }): Promise<FoundItem> {
     // Generate receipt number
@@ -153,6 +166,8 @@ export class PgStorage implements IStorage {
     category?: string;
     location?: string;
     search?: string;
+    startDate?: Date;
+    endDate?: Date;
     page?: number;
     limit?: number;
   }): Promise<{ items: FoundItem[]; total: number }> {
@@ -180,6 +195,13 @@ export class PgStorage implements IStorage {
           sql`array_to_string(${foundItems.tags}, ' ') ILIKE ${query}`
         )
       );
+    }
+
+    if (filters.startDate) {
+      conditions.push(sql`${foundItems.createdAt} >= ${filters.startDate}`);
+    }
+    if (filters.endDate) {
+      conditions.push(sql`${foundItems.createdAt} <= ${filters.endDate}`);
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -214,6 +236,17 @@ export class PgStorage implements IStorage {
       .returning();
 
     return item;
+  }
+
+  async updateFoundItem(id: string, item: Partial<FoundItem>): Promise<FoundItem> {
+    // Exclude id and createdAt from the update payload
+    const { id: _id, createdAt: _createdAt, ...updateData } = item as any;
+    const [updated] = await db
+      .update(foundItems)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(foundItems.id, id))
+      .returning();
+    return updated;
   }
 
   async deleteFoundItem(id: string): Promise<boolean> {
@@ -256,6 +289,8 @@ export class PgStorage implements IStorage {
     category?: string;
     location?: string;
     search?: string;
+    startDate?: Date;
+    endDate?: Date;
     page?: number;
     limit?: number;
   }): Promise<{ items: LostItem[]; total: number }> {
@@ -286,6 +321,13 @@ export class PgStorage implements IStorage {
           sql`array_to_string(${lostItems.tags}, ' ') ILIKE ${query}`
         )
       );
+    }
+
+    if (filters.startDate) {
+      conditions.push(sql`${lostItems.createdAt} >= ${filters.startDate}`);
+    }
+    if (filters.endDate) {
+      conditions.push(sql`${lostItems.createdAt} <= ${filters.endDate}`);
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -320,6 +362,17 @@ export class PgStorage implements IStorage {
       .returning();
 
     return item;
+  }
+
+  async updateLostItem(id: string, item: Partial<LostItem>): Promise<LostItem> {
+    // Exclude id and createdAt from the update payload
+    const { id: _id, createdAt: _createdAt, ...updateData } = item as any;
+    const [updated] = await db
+      .update(lostItems)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(lostItems.id, id))
+      .returning();
+    return updated;
   }
 
   async deleteLostItem(id: string): Promise<boolean> {
@@ -700,24 +753,60 @@ export class PgStorage implements IStorage {
   }
 
   async getStats() {
+    // Basic Counts
     const [found] = await db.select({ count: sql<number>`count(*)` }).from(foundItems);
     const [lost] = await db.select({ count: sql<number>`count(*)` }).from(lostItems);
     const [claimsCount] = await db.select({ count: sql<number>`count(*)` }).from(claims);
+    const [revenue] = await db.select({ total: sql<number>`sum(amount)` }).from(payments).where(eq(payments.status, "paid"));
 
-    const [revenue] = await db
-      .select({ total: sql<number>`sum(amount)` })
-      .from(payments)
-      .where(eq(payments.status, "paid"));
+    // Trends (30d vs Previous 30d)
+    const trends = await db.execute(sql`
+      WITH periods AS (
+        SELECT 
+          count(*) FILTER (WHERE created_at >= current_date - interval '30 days') as current_found,
+          count(*) FILTER (WHERE created_at < current_date - interval '30 days' AND created_at >= current_date - interval '60 days') as prev_found
+        FROM found_items
+      ),
+      lost_periods AS (
+        SELECT 
+          count(*) FILTER (WHERE created_at >= current_date - interval '30 days') as current_lost,
+          count(*) FILTER (WHERE created_at < current_date - interval '30 days' AND created_at >= current_date - interval '60 days') as prev_lost
+        FROM lost_items
+      ),
+      claim_periods AS (
+        SELECT 
+          count(*) FILTER (WHERE created_at >= current_date - interval '30 days') as current_claims,
+          count(*) FILTER (WHERE created_at < current_date - interval '30 days' AND created_at >= current_date - interval '60 days') as prev_claims
+        FROM claims
+      )
+      SELECT * FROM periods, lost_periods, claim_periods
+    `);
 
-    const [activeFound] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(foundItems)
-      .where(eq(foundItems.status, "active"));
+    // Category Breakdown
+    const categories = await db.execute(sql`
+      SELECT category as name, count(*)::int as value
+      FROM (
+        SELECT category FROM found_items
+        UNION ALL
+        SELECT category FROM lost_items
+      ) combined
+      GROUP BY category
+      ORDER BY value DESC
+      LIMIT 5
+    `);
 
-    const [activeLost] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(lostItems)
-      .where(eq(lostItems.status, "active"));
+    // Success Rate
+    const [resolved] = await db.select({ count: sql<number>`count(*)` }).from(claims).where(or(eq(claims.status, "verified"), eq(claims.status, "resolved")));
+
+    // Active Records
+    const [activeFound] = await db.select({ count: sql<number>`count(*)` }).from(foundItems).where(eq(foundItems.status, "active"));
+    const [activeLost] = await db.select({ count: sql<number>`count(*)` }).from(lostItems).where(eq(lostItems.status, "active"));
+
+    const trendData = trends.rows[0];
+    const calculateTrend = (curr: number, prev: number) => {
+      if (prev === 0) return curr > 0 ? 100 : 0;
+      return Math.round(((curr - prev) / prev) * 100);
+    };
 
     return {
       totalFound: Number(found.count),
@@ -726,6 +815,13 @@ export class PgStorage implements IStorage {
       totalRevenue: Number(revenue?.total || 0),
       activeFound: Number(activeFound.count),
       activeLost: Number(activeLost.count),
+      successRate: Math.round((Number(resolved.count) / (Number(claimsCount.count) || 1)) * 100),
+      trends: {
+        found: calculateTrend(Number(trendData.current_found), Number(trendData.prev_found)),
+        lost: calculateTrend(Number(trendData.current_lost), Number(trendData.prev_lost)),
+        claims: calculateTrend(Number(trendData.current_claims), Number(trendData.prev_claims)),
+      },
+      categories: categories.rows,
     };
   }
 
@@ -760,6 +856,16 @@ export class PgStorage implements IStorage {
       GROUP BY 1
     `);
 
+    // Get daily counts for claims
+    const claimCounts = await db.execute(sql`
+      SELECT 
+        date_trunc('day', created_at)::date as day,
+        count(*)::int as count
+      FROM claims
+      WHERE created_at >= current_date - interval '6 days'
+      GROUP BY 1
+    `);
+
     // Map results
     const activity = days.rows.map((day: any) => {
       const found = foundCounts.rows.find((r: any) =>
@@ -768,11 +874,15 @@ export class PgStorage implements IStorage {
       const lost = lostCounts.rows.find((r: any) =>
         new Date(r.day).toDateString() === new Date(day.date).toDateString()
       );
+      const claimRow = claimCounts.rows.find((r: any) =>
+        new Date(r.day).toDateString() === new Date(day.date).toDateString()
+      );
 
       return {
         name: day.name,
         found: Number(found?.count || 0),
-        lost: Number(lost?.count || 0)
+        lost: Number(lost?.count || 0),
+        claims: Number(claimRow?.count || 0)
       };
     });
 
@@ -788,10 +898,21 @@ export class PgStorage implements IStorage {
     return auditLog;
   }
 
-  async getLatestAuditLogs(limit: number = 20): Promise<AuditLog[]> {
+  async getLatestAuditLogs(filters: { adminId?: string; action?: string; dateFrom?: Date; dateTo?: Date; limit?: number } = {}): Promise<AuditLog[]> {
+    const { adminId, action, dateFrom, dateTo, limit = 50 } = filters;
+
+    const conditions = [];
+    if (adminId) conditions.push(eq(auditLogs.adminId, adminId));
+    if (action) conditions.push(eq(auditLogs.action, action));
+    if (dateFrom) conditions.push(sql`${auditLogs.createdAt} >= ${dateFrom}`);
+    if (dateTo) conditions.push(sql`${auditLogs.createdAt} <= ${dateTo}`);
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
     const logs = await db
       .select()
       .from(auditLogs)
+      .where(whereClause)
       .orderBy(desc(auditLogs.createdAt))
       .limit(limit);
     return logs;
@@ -812,6 +933,61 @@ export class PgStorage implements IStorage {
       })
       .returning();
     return setting;
+  }
+
+  async getUserMatches(userId: string) {
+    const userLostItems = await db.select().from(lostItems).where(and(eq(lostItems.seekerId, userId), eq(lostItems.status, "active")));
+    const allMatches = [];
+
+    for (const item of userLostItems) {
+      const matches = await matchingService.findPotentialMatches(item as any, 'lost');
+      if (matches.length > 0) {
+        allMatches.push({
+          parentItem: item,
+          matches: matches.map(m => ({
+            ...m.item,
+            score: Math.round(m.score * 100)
+          }))
+        });
+      }
+    }
+    return allMatches;
+  }
+
+  async getUserWeeklyActivity(userId: string) {
+    const days = await db.execute(sql`
+      SELECT to_char(d, 'Mon') as name, d::date as date
+      FROM generate_series(
+        current_date - interval '6 days', 
+        current_date, 
+        '1 day'
+      ) as d
+    `);
+
+    const foundCounts = await db.execute(sql`
+      SELECT date_trunc('day', created_at)::date as day, count(*)::int as count
+      FROM found_items WHERE finder_id = ${userId} AND created_at >= current_date - interval '6 days'
+      GROUP BY 1
+    `);
+
+    const lostCounts = await db.execute(sql`
+      SELECT date_trunc('day', created_at)::date as day, count(*)::int as count
+      FROM lost_items WHERE seeker_id = ${userId} AND created_at >= current_date - interval '6 days'
+      GROUP BY 1
+    `);
+
+    const claimCounts = await db.execute(sql`
+      SELECT date_trunc('day', created_at)::date as day, count(*)::int as count
+      FROM claims WHERE user_id = ${userId} AND created_at >= current_date - interval '6 days'
+      GROUP BY 1
+    `);
+
+    return days.rows.map((day: any) => ({
+      name: day.name,
+      found: Number(foundCounts.rows.find((r: any) => new Date(r.day).toDateString() === new Date(day.date).toDateString())?.count || 0),
+      lost: Number(lostCounts.rows.find((r: any) => new Date(r.day).toDateString() === new Date(day.date).toDateString())?.count || 0),
+      claims: Number(claimCounts.rows.find((r: any) => new Date(r.day).toDateString() === new Date(day.date).toDateString())?.count || 0),
+    }));
   }
 }
 

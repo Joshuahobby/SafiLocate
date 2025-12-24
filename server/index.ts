@@ -5,6 +5,7 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import { sanitizeInputs } from "./middleware/sanitize";
 
 const app = express();
 const httpServer = createServer(app);
@@ -54,6 +55,20 @@ app.use(rateLimit({
   legacyHeaders: false,
   skip: (req) => req.path.startsWith("/uploads") || req.path.includes("."), // Skip static files
 }));
+
+// Stricter rate limiting for auth endpoints (prevent brute force)
+const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: isDev ? 100 : 5, // 5 attempts in production
+  message: { error: "Too many login attempts. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use("/api/login", authRateLimiter);
+app.use("/api/register", authRateLimiter);
+
+// Input sanitization middleware (XSS prevention)
+app.use(sanitizeInputs);
 
 app.use("/uploads", express.static("uploads", { maxAge: "1d" }));
 

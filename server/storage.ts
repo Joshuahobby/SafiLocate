@@ -27,6 +27,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   listUsers(page?: number, limit?: number): Promise<{ users: User[]; total: number }>;
   updateUserRole(id: string, role: string): Promise<User | undefined>;
+  updateUserProfile(id: string, updates: Partial<User>): Promise<User | undefined>;
 
   // Found Items
   createFoundItem(item: InsertFoundItem & { tags?: string[] }): Promise<FoundItem>;
@@ -37,10 +38,13 @@ export interface IStorage {
     category?: string;
     location?: string;
     search?: string;
+    startDate?: Date;
+    endDate?: Date;
     page?: number;
     limit?: number;
   }): Promise<{ items: FoundItem[]; total: number }>;
   updateFoundItemStatus(id: string, status: string): Promise<FoundItem>;
+  updateFoundItem(id: string, item: Partial<FoundItem>): Promise<FoundItem>;
   deleteFoundItem(id: string): Promise<boolean>;
 
   // Lost Items
@@ -52,10 +56,13 @@ export interface IStorage {
     category?: string;
     location?: string;
     search?: string;
+    startDate?: Date;
+    endDate?: Date;
     page?: number;
     limit?: number;
   }): Promise<{ items: LostItem[]; total: number }>;
   updateLostItemStatus(id: string, status: string): Promise<LostItem>;
+  updateLostItem(id: string, item: Partial<LostItem>): Promise<LostItem>;
   deleteLostItem(id: string): Promise<boolean>;
   activateLostItem(id: string, expiresAt: Date): Promise<LostItem>;
   getExpiredLostItems(): Promise<LostItem[]>;
@@ -105,17 +112,33 @@ export interface IStorage {
     totalRevenue: number;
     activeFound: number;
     activeLost: number;
+    successRate: number;
+    trends: {
+      found: number;
+      lost: number;
+      claims: number;
+    };
+    categories: any[];
   }>;
 
   getWeeklyActivity(): Promise<Array<{
     name: string;
     found: number;
     lost: number;
+    claims: number;
+  }>>;
+
+  getUserMatches(userId: string): Promise<any[]>;
+  getUserWeeklyActivity(userId: string): Promise<Array<{
+    name: string;
+    found: number;
+    lost: number;
+    claims: number;
   }>>;
 
   // Audit Logs
   createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
-  getLatestAuditLogs(limit?: number): Promise<AuditLog[]>;
+  getLatestAuditLogs(filters?: { adminId?: string; action?: string; dateFrom?: Date; dateTo?: Date; limit?: number }): Promise<AuditLog[]>;
 
   // System Settings
   getSettings(): Promise<SystemSetting[]>;

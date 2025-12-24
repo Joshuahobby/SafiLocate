@@ -1,12 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertFoundItemSchema, insertLostItemSchema, insertClaimSchema } from "@shared/schema";
+import { insertFoundItemSchema, insertLostItemSchema, insertClaimSchema, type FoundItem, type LostItem, type User } from "@shared/schema";
 import { paymentRoutes } from "./routes/payment";
 import { uploadRoutes } from "./routes/upload";
 import { imageService } from "./services/image.service";
 import { aiService } from "./services/ai.service";
 import { matchingService } from "./services/matching.service";
+import { hashPassword } from "./auth";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -19,27 +20,56 @@ export async function registerRoutes(
     res.status(401).json({ error: "Unauthorized" });
   };
 
-  const sanitizeItem = (item: any, user: any, isVerifiedClaimant: boolean = false) => {
+  const sanitizeUser = (user: any) => {
+    if (!user) return null;
+    const { password, ...safeUser } = user;
+    return safeUser;
+  };
+
+  const sanitizeItem = async (item: any, user: any) => {
+    const isAdmin = user?.role === 'admin';
     const isOwner = user && (
       (item.finderId && user.id === item.finderId) ||
       (item.seekerId && user.id === item.seekerId)
     );
-    const isAdmin = user?.role === 'admin';
 
-    if (isOwner || isAdmin || isVerifiedClaimant) return item;
+    let isVerifiedClaimant = false;
+    if (user && !isOwner && !isAdmin) {
+      // Check if this specific user has a verified claim for this item
+      const claims = await storage.listClaims({
+        itemId: item.id,
+        userId: user.id,
+        status: 'verified'
+      });
+      if (claims.items.length > 0) {
+        isVerifiedClaimant = true;
+      }
+    }
+
+    const hasFullAccess = isOwner || isAdmin || isVerifiedClaimant;
 
     const maskPhone = (phone: string) =>
       phone ? phone.replace(/(\d{3})\d+(\d{2})/, "$1******$2") : phone;
 
+    const maskName = (name: string) => {
+      if (!name) return name;
+      const parts = name.split(' ');
+      if (parts.length === 1) return parts[0][0] + '***';
+      return parts[0][0] + '*** ' + parts[parts.length - 1][0] + '***';
+    };
+
+    if (hasFullAccess) return item;
+
     return {
       ...item,
+      contactName: maskName(item.contactName),
       contactPhone: maskPhone(item.contactPhone),
       finderPhone: maskPhone(item.finderPhone),
       seekerPhone: maskPhone(item.seekerPhone),
+      identifier: item.identifier ? "********" : undefined, // Hide IMEI/Serial
       finderEmail: undefined,
       seekerEmail: undefined,
       contactEmail: undefined,
-      contactName: item.contactName // Keep name visible? Handbook says "visible to Item owner, Claimant...". But masking name makes listing useless? Let's keep Name, mask Phone/Email.
     };
   };
 
@@ -116,14 +146,33 @@ export async function registerRoutes(
     }
   });
 
-  // List Claims (Admin)
+  // List Claims (RBAC Reinforced)
   app.get("/api/claims", requireAuth, async (req, res) => {
     const itemId = req.query.itemId as string;
+    const userId = req.query.userId as string;
     const status = req.query.status as string;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
 
-    const result = await storage.listClaims({ itemId, status, page, limit });
+    const user = req.user as any;
+    const isAdmin = user.role === 'admin';
+
+    // If itemId is provided, check if the user is the owner
+    if (itemId && !isAdmin) {
+      const foundItem = await storage.getFoundItem(itemId);
+      const lostItem = await storage.getLostItem(itemId);
+      const item = (foundItem || lostItem) as any;
+
+      if (!item || (item.finderId !== user.id && item.seekerId !== user.id)) {
+        return res.status(403).json({ error: "Forbidden: You can only view claims for your own items" });
+      }
+    } else if (!isAdmin) {
+      // If no itemId provided and not admin, only show user's own claims
+      const result = await storage.listClaims({ userId: user.id, status, page, limit });
+      return res.json(result);
+    }
+
+    const result = await storage.listClaims({ itemId, userId, status, page, limit });
     res.json(result);
   });
 
@@ -169,6 +218,52 @@ export async function registerRoutes(
     }
   });
 
+  // User Dashboard Routes
+  app.get("/api/user/matches", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    try {
+      const matches = await storage.getUserMatches((req.user as any).id);
+      res.json(matches);
+    } catch (error) {
+      console.error("Fetch matches error:", error);
+      res.status(500).json({ error: "Failed to fetch matches" });
+    }
+  });
+
+  app.get("/api/user/activity", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    try {
+      const activity = await storage.getUserWeeklyActivity((req.user as any).id);
+      res.json(activity);
+    } catch (error) {
+      console.error("Fetch activity error:", error);
+      res.status(500).json({ error: "Failed to fetch activity" });
+    }
+  });
+
+  app.patch("/api/user/profile", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    try {
+      const { email, password } = req.body;
+      const user = req.user as any;
+      const updates: any = {};
+
+      if (email) {
+        updates.email = email;
+      }
+
+      if (password) {
+        updates.password = await hashPassword(password);
+      }
+
+      const updatedUser = await storage.updateUserProfile(user.id, updates);
+      res.json({ success: true, message: "Profile updated", user: sanitizeUser(updatedUser) });
+    } catch (error: any) {
+      console.error("Update profile error:", error);
+      res.status(500).json({ error: error.message || "Failed to update profile" });
+    }
+  });
+
   // Get Items (Unified Search)
   app.get("/api/items", async (req, res) => {
     const search = req.query.search as string;
@@ -198,7 +293,10 @@ export async function registerRoutes(
         };
       });
 
-      return res.json(mappedItems.map(i => sanitizeItem(i, (req as any).user)));
+      const sanitizedItems = await Promise.all(
+        mappedItems.map(i => sanitizeItem(i, (req as any).user))
+      );
+      return res.json(sanitizedItems);
     }
 
     let foundItems: any[] = [];
@@ -242,7 +340,10 @@ export async function registerRoutes(
     const allItems = [...foundItems, ...lostItems];
     allItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    res.json(allItems.map(i => sanitizeItem(i, (req as any).user)));
+    const sanitizedItems = await Promise.all(
+      allItems.map(i => sanitizeItem(i, (req as any).user))
+    );
+    res.json(sanitizedItems);
   });
 
   // Get Single Item
@@ -264,12 +365,14 @@ export async function registerRoutes(
 
     const foundItem = await storage.getFoundItem(id);
     if (foundItem) {
-      return res.json(sanitizeItem({ ...foundItem, type: 'found', date: foundItem.dateFound, image: foundItem.imageUrls?.[0] }, user, isVerifiedClaimant));
+      const sanitized = await sanitizeItem({ ...foundItem, type: 'found', date: foundItem.dateFound, image: foundItem.imageUrls?.[0] }, user);
+      return res.json(sanitized);
     }
 
     const lostItem = await storage.getLostItem(id);
     if (lostItem) {
-      return res.json(sanitizeItem({ ...lostItem, type: 'lost', date: lostItem.dateLost, image: lostItem.imageUrls?.[0] }, user, isVerifiedClaimant));
+      const sanitized = await sanitizeItem({ ...lostItem, type: 'lost', date: lostItem.dateLost, image: lostItem.imageUrls?.[0] }, user);
+      return res.json(sanitized);
     }
 
     return res.status(404).json({ error: "Item not found" });
@@ -324,6 +427,49 @@ export async function registerRoutes(
     }
   });
 
+  // Edit Item (Admin) - Full Update
+  app.put("/api/items/:id", requireAdmin, async (req, res) => {
+    const id = req.params.id;
+    const { type, id: _bodyId, ...updateData } = req.body;
+
+    if (!id || !type) {
+      return res.status(400).json({ error: "Missing required fields: id, type" });
+    }
+
+    if (!["found", "lost"].includes(type)) {
+      return res.status(400).json({ error: "Invalid type. Must be 'found' or 'lost'" });
+    }
+
+    try {
+      let updated;
+      if (type === 'found') {
+        updated = await storage.updateFoundItem(id, updateData);
+      } else {
+        updated = await storage.updateLostItem(id, updateData);
+      }
+
+      if (!updated) {
+        return res.status(404).json({ error: "Item not found" });
+      }
+
+      // Log Action
+      if ((req as any).user) {
+        await storage.createAuditLog({
+          adminId: (req as any).user.id,
+          action: `item_edited`,
+          entityType: "item",
+          entityId: id,
+          details: { type, fields: Object.keys(updateData) },
+        });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Update item error:", error);
+      res.status(500).json({ error: "Failed to update item" });
+    }
+  });
+
   // Delete Item (Admin)
   app.delete("/api/items/:id", requireAdmin, async (req, res) => {
     const id = req.params.id;
@@ -356,6 +502,136 @@ export async function registerRoutes(
     }
 
     res.json({ success: true });
+  });
+
+  // Admin: List Items with Pagination
+  app.get("/api/admin/items", requireAdmin, async (req, res) => {
+    try {
+      const type = req.query.type as string; // 'found' | 'lost' | 'all'
+      const status = req.query.status as string;
+      const category = req.query.category as string;
+      const search = req.query.search as string;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+
+      let foundItems: any[] = [];
+      let lostItems: any[] = [];
+      let totalFound = 0;
+      let totalLost = 0;
+
+      // Fetch Found Items
+      if (!type || type === 'found' || type === 'all') {
+        const result = await storage.listFoundItems({
+          status,
+          category: category !== 'all' ? category : undefined,
+          search,
+          page: type === 'found' ? page : 1, // Only paginate if single type
+          limit: type === 'found' ? limit : 1000, // Get all if combining
+          startDate,
+          endDate
+        });
+        foundItems = result.items.map(i => ({
+          ...i,
+          type: "found" as const,
+          date: i.dateFound,
+          image: i.imageUrls?.[0]
+        }));
+        totalFound = result.total;
+      }
+
+      // Fetch Lost Items
+      if (!type || type === 'lost' || type === 'all') {
+        const result = await storage.listLostItems({
+          status,
+          category: category !== 'all' ? category : undefined,
+          search,
+          page: type === 'lost' ? page : 1,
+          limit: type === 'lost' ? limit : 1000,
+          startDate,
+          endDate
+        });
+        lostItems = result.items.map(i => ({
+          ...i,
+          type: "lost" as const,
+          date: i.dateLost,
+          image: i.imageUrls?.[0]
+        }));
+        totalLost = result.total;
+      }
+
+      // Combine and Sort
+      let allItems = [...foundItems, ...lostItems];
+      allItems.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      // Apply pagination for combined results
+      const total = totalFound + totalLost;
+      if (!type || type === 'all') {
+        const start = (page - 1) * limit;
+        allItems = allItems.slice(start, start + limit);
+      }
+
+      res.json({
+        items: allItems,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      });
+    } catch (error) {
+      console.error("Admin items error:", error);
+      res.status(500).json({ error: "Failed to fetch items" });
+    }
+  });
+
+  // Admin: Bulk Actions
+  app.post("/api/admin/items/bulk", requireAdmin, async (req, res) => {
+    try {
+      const { items, action } = req.body; // items: { id: string, type: 'found' | 'lost' }[]
+
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "No items provided" });
+      }
+
+      const results = await Promise.all(items.map(async (item: { id: string, type: 'found' | 'lost' }) => {
+        try {
+          if (action === 'delete') {
+            if (item.type === 'found') await storage.deleteFoundItem(item.id);
+            else await storage.deleteLostItem(item.id);
+            await storage.createAuditLog({
+              adminId: (req.user as User).id,
+              action: "item_deleted",
+              entityType: item.type,
+              entityId: item.id,
+              details: { bulk: true }
+            });
+          } else if (action === 'verify' || action === 'reject') {
+            const status = action === 'verify' ? 'active' : 'rejected';
+            if (item.type === 'found') await storage.updateFoundItemStatus(item.id, status);
+            else await storage.updateLostItemStatus(item.id, status);
+
+            await storage.createAuditLog({
+              adminId: (req.user as User).id,
+              action: action === 'verify' ? "item_active" : "item_rejected",
+              entityType: item.type,
+              entityId: item.id,
+              details: { status, bulk: true }
+            });
+          }
+          return { id: item.id, success: true };
+        } catch (err) {
+          console.error(`Bulk action failed for item ${item.id}:`, err);
+          return { id: item.id, success: false };
+        }
+      }));
+
+      res.json({ success: true, results });
+    } catch (error) {
+      console.error("Bulk action error:", error);
+      res.status(500).json({ error: "Failed to process bulk actions" });
+    }
   });
 
   // Admin Stats
@@ -461,7 +737,13 @@ export async function registerRoutes(
   // Admin: Audit Logs
   app.get("/api/admin/audit-logs", requireAdmin, async (req, res) => {
     try {
-      const logs = await storage.getLatestAuditLogs();
+      const adminId = req.query.adminId as string;
+      const action = req.query.action as string;
+      const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined;
+      const dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : undefined;
+      const limit = parseInt(req.query.limit as string) || 50;
+
+      const logs = await storage.getLatestAuditLogs({ adminId, action, dateFrom, dateTo, limit });
       // Fetch admin usernames for the logs to display names instead of IDs
       const populatedLogs = await Promise.all(logs.map(async (log) => {
         const admin = await storage.getUser(log.adminId);

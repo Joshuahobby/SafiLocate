@@ -5,6 +5,7 @@ import session from "express-session";
 import bcrypt from "bcrypt";
 import { storage } from "./storage";
 import { User } from "@shared/schema";
+import { validatePassword } from "./utils/password-validator";
 
 export async function hashPassword(password: string) {
     return await bcrypt.hash(password, 10);
@@ -61,13 +62,52 @@ export function setupAuth(app: Express) {
         }
     });
 
-    app.post("/api/login", passport.authenticate("local"), (req, res) => {
-        res.status(200).json(req.user);
+    app.post("/api/login", (req, res, next) => {
+        passport.authenticate("local", async (err: any, user: any, info: any) => {
+            if (err) return next(err);
+
+            if (!user) {
+                // Log failed login attempt
+                await storage.createAuditLog({
+                    adminId: "system",
+                    action: "login_failed",
+                    entityType: "auth",
+                    entityId: req.body.username || "unknown",
+                    details: { ip: req.ip, userAgent: req.get("User-Agent") }
+                });
+                return res.status(401).json({ error: "Invalid credentials" });
+            }
+
+            req.login(user, async (loginErr) => {
+                if (loginErr) return next(loginErr);
+
+                // Log successful login
+                await storage.createAuditLog({
+                    adminId: user.id,
+                    action: "login_success",
+                    entityType: "auth",
+                    entityId: user.id,
+                    details: { ip: req.ip, userAgent: req.get("User-Agent") }
+                });
+
+                const { password: _, ...safeUser } = user;
+                res.status(200).json(safeUser);
+            });
+        })(req, res, next);
     });
 
     // Public registration - ALWAYS creates a regular user
     app.post("/api/register", async (req, res, next) => {
         try {
+            // Validate password strength
+            const passwordValidation = validatePassword(req.body.password);
+            if (!passwordValidation.isValid) {
+                return res.status(400).json({
+                    error: "Password does not meet requirements",
+                    details: passwordValidation.errors
+                });
+            }
+
             const existingUser = await storage.getUserByUsername(req.body.username);
             if (existingUser) {
                 return res.status(400).send("Username already exists");
@@ -130,6 +170,72 @@ export function setupAuth(app: Express) {
 
             const { password: _, ...safeUser } = user;
             res.status(201).json(safeUser);
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    // Admin: Update own profile (password/email)
+    app.patch("/api/admin/profile", async (req, res, next) => {
+        try {
+            if (!req.isAuthenticated()) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
+
+            const currentUser = req.user as User;
+            const { currentPassword, newPassword, email } = req.body;
+
+            // If changing password, verify current password and validate new password
+            if (newPassword) {
+                // Validate new password strength
+                const passwordValidation = validatePassword(newPassword);
+                if (!passwordValidation.isValid) {
+                    return res.status(400).json({
+                        error: "New password does not meet requirements",
+                        details: passwordValidation.errors
+                    });
+                }
+
+                if (!currentPassword) {
+                    return res.status(400).json({ error: "Current password is required to change password" });
+                }
+                const user = await storage.getUser(currentUser.id);
+                if (!user || !(await comparePassword(currentPassword, user.password))) {
+                    return res.status(400).json({ error: "Current password is incorrect" });
+                }
+            }
+
+            // Build update object
+            const updates: any = {};
+            if (newPassword) {
+                updates.password = await hashPassword(newPassword);
+            }
+            if (email !== undefined) {
+                updates.email = email || null;
+            }
+
+            if (Object.keys(updates).length === 0) {
+                return res.status(400).json({ error: "No updates provided" });
+            }
+
+            // Update user in database
+            const updated = await storage.updateUserProfile(currentUser.id, updates);
+            if (!updated) {
+                return res.status(404).json({ error: "User not found" });
+            }
+
+            const { password: _, ...safeUser } = updated;
+
+            // Log profile update
+            await storage.createAuditLog({
+                adminId: currentUser.id,
+                action: "profile_updated",
+                entityType: "user",
+                entityId: currentUser.id,
+                details: { fields: Object.keys(updates).filter(k => k !== 'password') }
+            });
+
+            res.json(safeUser);
         } catch (err) {
             next(err);
         }
