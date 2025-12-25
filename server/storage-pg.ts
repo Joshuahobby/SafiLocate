@@ -132,11 +132,11 @@ export class PgStorage implements IStorage {
       .insert(foundItems)
       .values({
         ...item,
-        receiptNumber,
         status: "pending",
         createdAt: new Date(),
         updatedAt: new Date(),
         tags: item.tags || [],
+        searchVector: sql`to_tsvector('english', coalesce(${item.title}, '') || ' ' || coalesce(${item.description}, '') || ' ' || coalesce(array_to_string(${item.tags || []}, ' '), ''))`
       })
       .returning();
 
@@ -186,15 +186,8 @@ export class PgStorage implements IStorage {
       conditions.push(ilike(foundItems.location, `%${filters.location}%`));
     }
     if (filters.search) {
-      const query = `%${filters.search}%`;
-      conditions.push(
-        or(
-          ilike(foundItems.title, query),
-          ilike(foundItems.description, query),
-          ilike(foundItems.location, query),
-          sql`array_to_string(${foundItems.tags}, ' ') ILIKE ${query}`
-        )
-      );
+      const query = sql`websearch_to_tsquery('english', ${filters.search})`;
+      conditions.push(sql`${foundItems.searchVector} @@ ${query}`);
     }
 
     if (filters.startDate) {
@@ -210,7 +203,10 @@ export class PgStorage implements IStorage {
       .select()
       .from(foundItems)
       .where(whereClause)
-      .orderBy(desc(foundItems.createdAt))
+      .orderBy(...(filters.search
+        ? [desc(sql`ts_rank(${foundItems.searchVector}, websearch_to_tsquery('english', ${filters.search}))`), desc(foundItems.createdAt)]
+        : [desc(foundItems.createdAt)]
+      ))
       .limit(limit)
       .offset(offset);
 
@@ -243,7 +239,11 @@ export class PgStorage implements IStorage {
     const { id: _id, createdAt: _createdAt, ...updateData } = item as any;
     const [updated] = await db
       .update(foundItems)
-      .set({ ...updateData, updatedAt: new Date() })
+      .set({
+        ...updateData,
+        updatedAt: new Date(),
+        searchVector: sql`to_tsvector('english', coalesce(${updateData.title}, ${foundItems.title}, '') || ' ' || coalesce(${updateData.description}, ${foundItems.description}, '') || ' ' || coalesce(array_to_string(coalesce(${updateData.tags}, ${foundItems.tags}), ' '), ''))`
+      })
       .where(eq(foundItems.id, id))
       .returning();
     return updated;
@@ -268,6 +268,7 @@ export class PgStorage implements IStorage {
         createdAt: new Date(),
         updatedAt: new Date(),
         tags: item.tags || [],
+        searchVector: sql`to_tsvector('english', coalesce(${item.title}, '') || ' ' || coalesce(${item.description}, '') || ' ' || coalesce(array_to_string(${item.tags || []}, ' '), ''))`
       })
       .returning();
 
@@ -312,15 +313,8 @@ export class PgStorage implements IStorage {
       conditions.push(ilike(lostItems.location, `%${filters.location}%`));
     }
     if (filters.search) {
-      const query = `%${filters.search}%`;
-      conditions.push(
-        or(
-          ilike(lostItems.title, query),
-          ilike(lostItems.description, query),
-          ilike(lostItems.location, query),
-          sql`array_to_string(${lostItems.tags}, ' ') ILIKE ${query}`
-        )
-      );
+      const query = sql`websearch_to_tsquery('english', ${filters.search})`;
+      conditions.push(sql`${lostItems.searchVector} @@ ${query}`);
     }
 
     if (filters.startDate) {
@@ -336,7 +330,10 @@ export class PgStorage implements IStorage {
       .select()
       .from(lostItems)
       .where(whereClause)
-      .orderBy(desc(lostItems.createdAt))
+      .orderBy(...(filters.search
+        ? [desc(sql`ts_rank(${lostItems.searchVector}, websearch_to_tsquery('english', ${filters.search}))`), desc(lostItems.createdAt)]
+        : [desc(lostItems.createdAt)]
+      ))
       .limit(limit)
       .offset(offset);
 
@@ -369,7 +366,11 @@ export class PgStorage implements IStorage {
     const { id: _id, createdAt: _createdAt, ...updateData } = item as any;
     const [updated] = await db
       .update(lostItems)
-      .set({ ...updateData, updatedAt: new Date() })
+      .set({
+        ...updateData,
+        updatedAt: new Date(),
+        searchVector: sql`to_tsvector('english', coalesce(${updateData.title}, ${lostItems.title}, '') || ' ' || coalesce(${updateData.description}, ${lostItems.description}, '') || ' ' || coalesce(array_to_string(coalesce(${updateData.tags}, ${lostItems.tags}), ' '), ''))`
+      })
       .where(eq(lostItems.id, id))
       .returning();
     return updated;

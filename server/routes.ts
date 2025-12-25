@@ -7,6 +7,7 @@ import { uploadRoutes } from "./routes/upload";
 import { imageService } from "./services/image.service";
 import { aiService } from "./services/ai.service";
 import { matchingService } from "./services/matching.service";
+import { notificationService } from "./services/notification.service";
 import { hashPassword } from "./auth";
 
 export async function registerRoutes(
@@ -140,6 +141,27 @@ export async function registerRoutes(
       const claimData = insertClaimSchema.parse(req.body);
       const userId = req.user ? (req.user as any).id : undefined;
       const claim = await storage.createClaim({ ...claimData, userId });
+
+      // Notify the item owner (finder/seeker)
+      // We perform this asynchronously so it doesn't block the response
+      (async () => {
+        try {
+          // Fetch the item to get owner details
+          let item: any;
+          if (claimData.itemType === 'found') {
+            item = await storage.getFoundItem(claimData.itemId);
+          } else {
+            item = await storage.getLostItem(claimData.itemId);
+          }
+
+          if (item) {
+            await notificationService.notifyItemOwnerOfClaim(claim, item, userId); // Use userId from req.user
+          }
+        } catch (err) {
+          console.error("Failed to send claim notification:", err);
+        }
+      })();
+
       res.status(201).json(claim);
     } catch (e) {
       res.status(400).json({ error: "Invalid claim data" });
@@ -211,6 +233,25 @@ export async function registerRoutes(
           details: { itemId: updated.itemId },
         });
       }
+
+      // Notify the claimant of the status change
+      (async () => {
+        try {
+          // Fetch the item to get details for the notification
+          let item: any;
+          if (updated.itemType === 'found') {
+            item = await storage.getFoundItem(updated.itemId);
+          } else {
+            item = await storage.getLostItem(updated.itemId);
+          }
+
+          if (item) {
+            await notificationService.notifyClaimantOfStatusChange(updated, item, status);
+          }
+        } catch (err) {
+          console.error("Failed to send claim status notification:", err);
+        }
+      })();
 
       res.json(updated);
     } catch (e) {

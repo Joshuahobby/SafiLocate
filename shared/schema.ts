@@ -9,7 +9,8 @@ import {
   date,
   pgEnum,
   index,
-  json
+  json,
+  customType
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -22,6 +23,10 @@ export const claimStatusEnum = pgEnum("claim_status", ["pending", "verified", "r
 export const reportReasonEnum = pgEnum("report_reason", ["spam", "scam", "wrong_category", "inappropriate", "fraudulent", "harassment"]);
 export const reportStatusEnum = pgEnum("report_status", ["pending", "reviewed", "resolved", "dismissed"]);
 export const priceTierEnum = pgEnum("price_tier", ["standard", "premium", "urgent", "custom"]);
+
+const tsvector = customType<{ data: string }>({
+  dataType: () => "tsvector",
+});
 
 // Users Table
 export const users = pgTable("users", {
@@ -60,6 +65,7 @@ export const foundItems = pgTable("found_items", {
   finderId: varchar("finder_id"), // FK to users.id (nullable, for future user accounts)
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  searchVector: tsvector("search_vector"),
 }, (table) => ({
   categoryIdx: index("idx_found_items_category").on(table.category),
   statusIdx: index("idx_found_items_status").on(table.status),
@@ -67,6 +73,7 @@ export const foundItems = pgTable("found_items", {
   createdAtIdx: index("idx_found_items_created_at").on(table.createdAt),
   tagsIdx: index("idx_found_items_tags").using("gin", table.tags),
   receiptNumberIdx: index("idx_found_items_receipt_number").on(table.receiptNumber),
+  searchVectorIdx: index("idx_found_items_search_vector").using("gin", table.searchVector),
 }));
 
 // Lost Items Table
@@ -94,6 +101,7 @@ export const lostItems = pgTable("lost_items", {
   seekerId: varchar("seeker_id"), // FK to users.id (nullable, for future user accounts)
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  searchVector: tsvector("search_vector"),
 }, (table) => ({
   categoryIdx: index("idx_lost_items_category").on(table.category),
   statusIdx: index("idx_lost_items_status").on(table.status),
@@ -102,6 +110,7 @@ export const lostItems = pgTable("lost_items", {
   expiresAtIdx: index("idx_lost_items_expires_at").on(table.expiresAt),
   tagsIdx: index("idx_lost_items_tags").using("gin", table.tags),
   createdAtIdx: index("idx_lost_items_created_at").on(table.createdAt),
+  searchVectorIdx: index("idx_lost_items_search_vector").using("gin", table.searchVector),
 }));
 
 // Claims Table

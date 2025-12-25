@@ -7,7 +7,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { sanitizeInputs } from "./middleware/sanitize";
 
-const app = express();
+export const app = express();
 const httpServer = createServer(app);
 
 declare module "http" {
@@ -137,14 +137,10 @@ import { setupAuth } from "./auth";
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "3000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-    },
-    () => {
+  const port = parseInt(process.env.PORT || "5000", 10);
+  if (process.env.NODE_ENV !== "test") {
+    httpServer.listen(port, () => {
       log(`serving on port ${port}`);
-    },
-  );
+    });
+  }
 })();
