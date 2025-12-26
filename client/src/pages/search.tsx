@@ -21,6 +21,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Empty, EmptyContent, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import { ItemCardSkeleton } from "@/components/skeletons/item-card-skeleton";
+import { MotionList, MotionItem, itemVariants } from "@/components/ui/motion-list";
 import {
   Select,
   SelectContent,
@@ -281,71 +284,57 @@ export default function SearchPage() {
 
         {/* Loading Skeletons */}
         {isLoading && (
-          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
-            {[...Array(12)].map((_, i) => (
-              <div key={i} className="glass-card rounded-2xl overflow-hidden animate-pulse">
-                <div className="aspect-[3/2] bg-muted" />
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-muted rounded w-3/4" />
-                  <div className="h-3 bg-muted rounded w-1/2" />
-                  <div className="h-8 bg-muted rounded-full w-full mt-4" />
-                </div>
-              </div>
+          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+            {[...Array(8)].map((_, i) => (
+              <ItemCardSkeleton key={i} />
             ))}
           </div>
         )}
 
         {/* Results Grid with Staggered Animation */}
         {!isLoading && filteredItems.length > 0 && (
-          <motion.div
-            className="grid gap-4"
-            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}
-            initial="hidden"
-            animate="visible"
-            variants={{
-              visible: {
-                transition: {
-                  staggerChildren: 0.05
-                }
-              }
-            }}
+          <MotionList
+            className="grid gap-3"
+            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
           >
-            {filteredItems.map((item, index) => (
-              <motion.div
+            {filteredItems.map((item) => (
+              <MotionItem
                 key={item.id}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: { opacity: 1, y: 0 }
-                }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
+                variants={itemVariants}
               >
                 <ItemCard {...item} />
-              </motion.div>
+              </MotionItem>
             ))}
-          </motion.div>
+          </MotionList>
         )}
 
         {/* Empty State */}
         {filteredItems.length === 0 && !isLoading && (
-          <div className="py-20 text-center">
-            <div className="glass-card max-w-md mx-auto p-8 rounded-3xl">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <SearchIcon className="w-10 h-10 text-primary" />
-              </div>
-              <h3 className="text-2xl font-heading font-bold text-foreground mb-2">No Items Found</h3>
-              <p className="text-muted-foreground mb-6">Try adjusting your search or filters to see more results.</p>
-              <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                <Button variant="outline" onClick={() => setSearchQuery("")}>
-                  Clear Search
-                </Button>
-                <Button onClick={() => {
-                  setCategoryFilter("all");
-                  setLocationFilter("");
-                  setSearchQuery("");
-                }}>
-                  Reset All Filters
-                </Button>
-              </div>
+          <div className="py-20 flex justify-center">
+            <div className="glass-card max-w-md w-full p-8 rounded-3xl">
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon" className="w-20 h-20 bg-gradient-to-br from-primary/20 to-blue-500/20 rounded-full mx-auto mb-4">
+                    <SearchIcon className="w-10 h-10 text-primary" />
+                  </EmptyMedia>
+                  <EmptyTitle className="text-2xl font-heading font-bold text-foreground">No Items Found</EmptyTitle>
+                  <EmptyDescription>
+                    Try adjusting your search or filters to see more results.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent className="mt-6 flex-row gap-2 justify-center">
+                  <Button variant="outline" onClick={() => setSearchQuery("")}>
+                    Clear Search
+                  </Button>
+                  <Button onClick={() => {
+                    setCategoryFilter("all");
+                    setLocationFilter("");
+                    setSearchQuery("");
+                  }}>
+                    Reset All Filters
+                  </Button>
+                </EmptyContent>
+              </Empty>
             </div>
           </div>
         )}

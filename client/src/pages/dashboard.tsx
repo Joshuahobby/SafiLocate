@@ -42,6 +42,9 @@ import { cn } from "@/lib/utils";
 import { UserSidebar } from "@/components/dashboard/sidebar";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Spinner } from "@/components/ui/spinner";
+import { Empty, EmptyContent, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import { MotionList, MotionItem, itemVariants } from "@/components/ui/motion-list";
 
 const fadeInUp = {
     initial: { opacity: 0, y: 20 },
@@ -112,7 +115,7 @@ export default function UserDashboard() {
     if (authLoading || !user) {
         return (
             <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <Spinner className="w-8 h-8 text-primary" />
             </div>
         );
     }
@@ -231,12 +234,12 @@ export default function UserDashboard() {
                     </div>
                     <Card className="bg-slate-900 border-slate-800 p-4 min-h-[300px] flex flex-col justify-center">
                         {matches.length === 0 ? (
-                            <div className="text-center space-y-3">
-                                <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mx-auto border border-dashed border-slate-700">
+                            <Empty className="p-0 border-0">
+                                <EmptyMedia variant="icon" className="mx-auto mb-2 bg-slate-800 border border-dashed border-slate-700 w-12 h-12">
                                     <Radar className="w-5 h-5 text-slate-600 animate-pulse" />
-                                </div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Scanning Registry...</p>
-                            </div>
+                                </EmptyMedia>
+                                <EmptyTitle className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Scanning Registry...</EmptyTitle>
+                            </Empty>
                         ) : (
                             <div className="space-y-3">
                                 {matches.slice(0, 3).map((match, i) => (
@@ -274,11 +277,15 @@ export default function UserDashboard() {
             </div>
             {matches.length === 0 ? (
                 <Card className="bg-slate-900 border-slate-800 p-12 text-center">
-                    <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-dashed border-slate-700">
-                        <Radar className="w-8 h-8 text-slate-600" />
-                    </div>
-                    <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-2">Zero Active Signals</h3>
-                    <p className="text-xs text-slate-500 max-w-xs mx-auto">Our protocol is scanning the registry every 60 seconds for potential matches related to your lost assets.</p>
+                    <Empty>
+                        <EmptyMedia variant="icon" className="mx-auto mb-4 bg-slate-800 border border-dashed border-slate-700 w-16 h-16">
+                            <Radar className="w-8 h-8 text-slate-600" />
+                        </EmptyMedia>
+                        <EmptyTitle className="text-sm font-bold text-white uppercase tracking-widest mb-2">Zero Active Signals</EmptyTitle>
+                        <EmptyDescription className="text-xs text-slate-500 max-w-xs mx-auto">
+                            Our protocol is scanning the registry every 60 seconds for potential matches related to your lost assets.
+                        </EmptyDescription>
+                    </Empty>
                 </Card>
             ) : (
                 <div className="space-y-8">
@@ -343,43 +350,51 @@ export default function UserDashboard() {
             <div className="grid grid-cols-1 gap-3">
                 {items.length === 0 ? (
                     <Card className="bg-slate-900 border-slate-800 p-12 text-center">
-                        <Package className="w-8 h-8 text-slate-700 mx-auto mb-4" />
-                        <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">No assets reported yet.</p>
+                        <Empty>
+                            <EmptyMedia variant="icon" className="mx-auto mb-4 bg-transparent w-auto h-auto">
+                                <Package className="w-8 h-8 text-slate-700" />
+                            </EmptyMedia>
+                            <EmptyTitle className="text-xs text-slate-500 font-bold uppercase tracking-widest">No assets reported yet.</EmptyTitle>
+                        </Empty>
                     </Card>
                 ) : (
-                    items.map((item) => (
-                        <Card key={item.id} className="bg-slate-900 border-slate-800 hover:bg-slate-800/50 transition-colors group">
-                            <CardContent className="p-4 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center",
-                                        item.type === 'found' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500')}>
-                                        <Package className="w-5 h-5" />
-                                    </div>
-                                    <div className="space-y-0.5">
-                                        <h4 className="text-sm font-bold text-white tracking-tight">{item.title}</h4>
-                                        <div className="flex items-center gap-3 text-[10px] font-medium text-slate-400">
-                                            <span className="flex items-center gap-1 uppercase tracking-widest">
-                                                <Clock className="w-3 h-3" /> {new Date(item.createdAt).toLocaleDateString()}
-                                            </span>
-                                            <span className="flex items-center gap-1 uppercase tracking-widest">
-                                                <MapPin className="w-3 h-3" /> {item.location}
-                                            </span>
+                    <MotionList className="grid grid-cols-1 gap-3">
+                        {items.map((item) => (
+                            <MotionItem key={item.id} variants={itemVariants}>
+                                <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800/50 transition-colors group">
+                                    <CardContent className="p-4 flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center",
+                                                item.type === 'found' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500')}>
+                                                <Package className="w-5 h-5" />
+                                            </div>
+                                            <div className="space-y-0.5">
+                                                <h4 className="text-sm font-bold text-white tracking-tight">{item.title}</h4>
+                                                <div className="flex items-center gap-3 text-[10px] font-medium text-slate-400">
+                                                    <span className="flex items-center gap-1 uppercase tracking-widest">
+                                                        <Clock className="w-3 h-3" /> {new Date(item.createdAt).toLocaleDateString()}
+                                                    </span>
+                                                    <span className="flex items-center gap-1 uppercase tracking-widest">
+                                                        <MapPin className="w-3 h-3" /> {item.location}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <Badge className={cn("text-[9px] font-black uppercase tracking-widest border-none px-3",
-                                        item.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' :
-                                            item.status === 'pending' ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-800 text-slate-500')}>
-                                        {item.status}
-                                    </Badge>
-                                    <Button variant="ghost" size="icon" className="text-slate-500 hover:text-white" onClick={() => setLocation(`/item/${item.id}`)}>
-                                        <Eye className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))
+                                        <div className="flex items-center gap-4">
+                                            <Badge className={cn("text-[9px] font-black uppercase tracking-widest border-none px-3",
+                                                item.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' :
+                                                    item.status === 'pending' ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-800 text-slate-500')}>
+                                                {item.status}
+                                            </Badge>
+                                            <Button variant="ghost" size="icon" className="text-slate-500 hover:text-white" onClick={() => setLocation(`/item/${item.id}`)}>
+                                                <Eye className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </MotionItem>
+                        ))}
+                    </MotionList>
                 )}
             </div>
         </motion.div>
@@ -391,42 +406,51 @@ export default function UserDashboard() {
                 <Shield className="w-5 h-5 text-primary" />
                 <h2 className="text-xl font-bold text-white tracking-tight">Verification Claims</h2>
             </div>
+
             <div className="grid grid-cols-1 gap-4">
                 {claims.length === 0 ? (
                     <Card className="bg-slate-900 border-slate-800 p-12 text-center">
-                        <Shield className="w-8 h-8 text-slate-700 mx-auto mb-4" />
-                        <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">No active claims found.</p>
+                        <Empty>
+                            <EmptyMedia variant="icon" className="mx-auto mb-4 bg-transparent w-auto h-auto">
+                                <Shield className="w-8 h-8 text-slate-700" />
+                            </EmptyMedia>
+                            <EmptyTitle className="text-xs text-slate-500 font-bold uppercase tracking-widest">No active claims found.</EmptyTitle>
+                        </Empty>
                     </Card>
                 ) : (
-                    claims.map((claim: any) => (
-                        <Card key={claim.id} className="bg-slate-900 border-slate-800 overflow-hidden">
-                            <CardContent className="p-5 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center">
-                                        <ShieldCheck className="w-5 h-5 text-slate-400" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <h4 className="text-xs font-black text-white uppercase tracking-widest">Protocol Claim: #{claim.id.slice(0, 8)}</h4>
-                                        <p className="text-[10px] text-slate-500 font-medium">Applied on {new Date(claim.createdAt).toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-6">
-                                    <div className="text-right space-y-1">
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Status</span>
-                                        <Badge className={cn("text-[9px] font-black border-none uppercase tracking-widest",
-                                            claim.status === 'verified' ? 'bg-emerald-500/10 text-emerald-500' :
-                                                claim.status === 'rejected' ? 'bg-rose-500/10 text-rose-500' : 'bg-slate-800 text-slate-400')}>
-                                            {claim.status}
-                                        </Badge>
-                                    </div>
-                                    <ChevronRight className="w-4 h-4 text-slate-600" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))
+                    <MotionList className="grid grid-cols-1 gap-4">
+                        {claims.map((claim: any) => (
+                            <MotionItem key={claim.id} variants={itemVariants}>
+                                <Card className="bg-slate-900 border-slate-800 overflow-hidden">
+                                    <CardContent className="p-5 flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center">
+                                                <ShieldCheck className="w-5 h-5 text-slate-400" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <h4 className="text-xs font-black text-white uppercase tracking-widest">Protocol Claim: #{claim.id.slice(0, 8)}</h4>
+                                                <p className="text-[10px] text-slate-500 font-medium">Applied on {new Date(claim.createdAt).toLocaleDateString()}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-6">
+                                            <div className="text-right space-y-1">
+                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Status</span>
+                                                <Badge className={cn("text-[9px] font-black border-none uppercase tracking-widest",
+                                                    claim.status === 'verified' ? 'bg-emerald-500/10 text-emerald-500' :
+                                                        claim.status === 'rejected' ? 'bg-rose-500/10 text-rose-500' : 'bg-slate-800 text-slate-400')}>
+                                                    {claim.status}
+                                                </Badge>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-slate-600" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </MotionItem>
+                        ))}
+                    </MotionList>
                 )}
             </div>
-        </motion.div>
+        </motion.div >
     );
 
     const renderSecurityProfile = () => (

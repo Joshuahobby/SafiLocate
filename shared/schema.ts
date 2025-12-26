@@ -212,7 +212,10 @@ export const insertUserSchema = createInsertSchema(users).pick({
   role: true,
 });
 
-export const insertFoundItemSchema = createInsertSchema(foundItems).pick({
+export const insertFoundItemSchema = createInsertSchema(foundItems, {
+  finderEmail: z.string().email().min(1, "Email is required"),
+  finderPhone: z.string().min(1, "Phone is required"),
+}).pick({
   category: true,
   title: true,
   description: true,

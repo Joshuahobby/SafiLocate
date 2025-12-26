@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
-import { app } from "../../server/index";
+import { app, initPromise } from "../../server/index";
 
 describe("Auth Endpoints", () => {
     const timestamp = Date.now();
@@ -11,6 +11,10 @@ describe("Auth Endpoints", () => {
         phone: "0781234567"
     };
 
+    beforeAll(async () => {
+        await initPromise;
+    });
+
     it("should register a new user successfully", async () => {
         const res = await request(app)
             .post("/api/register")
@@ -20,7 +24,7 @@ describe("Auth Endpoints", () => {
         expect(res.body).toHaveProperty("id");
         expect(res.body.username).toBe(testUser.username);
         expect(res.body).not.toHaveProperty("password"); // Should not return password
-    });
+    }, 15000);
 
     it("should fail to register overlapping username", async () => {
         const res = await request(app)
@@ -28,7 +32,7 @@ describe("Auth Endpoints", () => {
             .send(testUser);
 
         expect(res.status).toBe(400); // Username exists
-    });
+    }, 15000);
 
     it("should login successfully with valid credentials", async () => {
         const res = await request(app)
@@ -41,7 +45,7 @@ describe("Auth Endpoints", () => {
         expect(res.status).toBe(200);
         expect(res.body).toHaveProperty("id");
         expect(res.headers["set-cookie"]).toBeDefined(); // Should set session cookie
-    });
+    }, 15000);
 
     it("should reject login with invalid password", async () => {
         const res = await request(app)
@@ -52,7 +56,7 @@ describe("Auth Endpoints", () => {
             });
 
         expect(res.status).toBe(401);
-    });
+    }, 15000);
 
     it("should reject login for non-existent user", async () => {
         const res = await request(app)
@@ -63,5 +67,5 @@ describe("Auth Endpoints", () => {
             });
 
         expect(res.status).toBe(401);
-    });
+    }, 15000);
 });

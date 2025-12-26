@@ -111,7 +111,8 @@ app.use((req, res, next) => {
 
 import { setupAuth } from "./auth";
 
-(async () => {
+// Export the initialization promise so tests can wait for it
+export const initPromise = (async () => {
   setupAuth(app);
   await registerRoutes(httpServer, app);
 
@@ -128,7 +129,8 @@ import { setupAuth } from "./auth";
   // doesn't interfere with the other routes
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
-  } else {
+  } else if (process.env.NODE_ENV !== "test") {
+    // Skip Vite setup in tests
     const { setupVite } = await import("./vite");
     await setupVite(httpServer, app);
   }
@@ -143,4 +145,7 @@ import { setupAuth } from "./auth";
       log(`serving on port ${port}`);
     });
   }
-})();
+})().catch(err => {
+  console.error("Failed to initialize server:", err);
+  throw err;
+});

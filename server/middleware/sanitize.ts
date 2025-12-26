@@ -26,9 +26,7 @@ function sanitizeObject(obj: any): any {
 
     if (Array.isArray(obj)) {
         return obj.map(sanitizeObject);
-    }
-
-    if (typeof obj === "object") {
+    } else if (typeof obj === "object") {
         const sanitized: any = {};
         for (const key of Object.keys(obj)) {
             sanitized[key] = sanitizeObject(obj[key]);

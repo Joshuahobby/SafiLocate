@@ -29,10 +29,10 @@ export function ItemCard({ id, title, category, location, date, type, image, cla
             <Badge
               variant="secondary"
               className={cn(
-                "backdrop-blur-md border-0 shadow-sm font-medium",
+                "backdrop-blur-xl border-0 shadow-sm font-bold tracking-wide uppercase text-[10px] px-2.5 py-1",
                 type === 'found'
-                  ? 'bg-primary/10 text-primary dark:text-blue-300'
-                  : 'bg-orange-500/10 text-orange-700 dark:text-orange-300'
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-500/20'
+                  : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 dark:bg-orange-500/20'
               )}
             >
               {type === 'found' ? 'Found' : 'Lost'}
@@ -40,7 +40,7 @@ export function ItemCard({ id, title, category, location, date, type, image, cla
           </div>
 
           {/* Placeholder Image State */}
-          <div className="w-full h-full flex items-center justify-center bg-secondary/30 text-muted-foreground group-hover:scale-105 transition-transform duration-500">
+          <div className="w-full h-full flex items-center justify-center bg-secondary/30 text-muted-foreground group-hover:scale-110 transition-transform duration-700 ease-out">
             {image ? (
               <img src={image} alt={title} className="w-full h-full object-cover" />
             ) : (
@@ -50,24 +50,24 @@ export function ItemCard({ id, title, category, location, date, type, image, cla
         </div>
 
         {/* Content Area */}
-        <div className="p-4 flex-1 flex flex-col">
+        <div className="p-3 flex-1 flex flex-col">
           <div className="mb-auto">
-            <h3 className="font-heading font-semibold text-base line-clamp-1 mb-1.5 group-hover:text-primary transition-colors">
+            <h3 className="font-heading font-bold text-base leading-tight mb-1.5 group-hover:text-primary transition-colors line-clamp-1">
               {title}
             </h3>
-            <div className="flex items-center text-sm text-muted-foreground mb-2">
-              <MapPin className="w-3.5 h-3.5 mr-1.5 shrink-0 text-primary/60" />
-              <span className="truncate">{location}</span>
+            <div className="flex items-center text-xs text-muted-foreground mb-2">
+              <MapPin className="w-3 h-3 mr-1 shrink-0 text-primary/60" />
+              <span className="truncate font-medium">{location}</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-3 border-t border-border/50 mt-2">
-            <span className="text-xs text-muted-foreground flex items-center bg-secondary/50 px-2 py-1 rounded-md">
-              <Calendar className="w-3 h-3 mr-1.5" />
+          <div className="flex items-center justify-between pt-2 border-t border-border/50 mt-1">
+            <span className="text-[10px] text-muted-foreground flex items-center bg-secondary/50 px-1.5 py-0.5 rounded-md">
+              <Calendar className="w-3 h-3 mr-1" />
               {date}
             </span>
-            <span className="text-xs font-semibold text-primary flex items-center group-hover:translate-x-1 transition-transform">
-              View Details <ArrowRight className="w-3 h-3 ml-1" />
+            <span className="text-[10px] font-bold text-primary flex items-center group-hover:translate-x-1 transition-transform uppercase tracking-wider">
+              Details <ArrowRight className="w-3 h-3 ml-1" />
             </span>
           </div>
         </div>

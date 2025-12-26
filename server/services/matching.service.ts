@@ -14,7 +14,8 @@ class MatchingService {
 
         // If new item is FOUND, look for LOST items
         if (type === 'found') {
-            const lostItems = await storage.getLostItems(); // usage of getLostItems might need filters if available
+            const result = await storage.listLostItems({});
+            const lostItems = result.items;
             // Filter manually for now as storage might not have advanced filters yet
             potentialMatches = lostItems.filter(lost =>
                 lost.status === 'active' && // Only active lost items
@@ -23,7 +24,8 @@ class MatchingService {
         }
         // If new item is LOST, look for FOUND items
         else {
-            const foundItems = await storage.getFoundItems();
+            const result = await storage.listFoundItems({});
+            const foundItems = result.items;
             potentialMatches = foundItems.filter(found =>
                 found.status === 'active' && // Only active found items
                 found.category === newItem.category // Must match category
