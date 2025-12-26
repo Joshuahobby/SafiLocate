@@ -728,12 +728,26 @@ export class PgStorage implements IStorage {
       return b.createdAt.getTime() - a.createdAt.getTime();
     });
 
-    // Slice for pagination if combined
-    if (type === 'all') {
-      items = items.slice(0, limit);
+    // Total count calculation
+    let totalCount = 0;
+    if (type === 'all' || type === 'found') {
+      const conditions = [eq(foundItems.status, 'active' as any)];
+      if (query) conditions.push(sql`${foundItems.searchVector} @@ ${query}`);
+      if (cat) conditions.push(eq(foundItems.category, cat));
+      if (loc) conditions.push(ilike(foundItems.location, loc));
+      const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(foundItems).where(and(...conditions));
+      totalCount += Number(count);
+    }
+    if (type === 'all' || type === 'lost') {
+      const conditions = [eq(lostItems.status, 'active' as any)];
+      if (query) conditions.push(sql`${lostItems.searchVector} @@ ${query}`);
+      if (cat) conditions.push(eq(lostItems.category, cat));
+      if (loc) conditions.push(ilike(lostItems.location, loc));
+      const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(lostItems).where(and(...conditions));
+      totalCount += Number(count);
     }
 
-    return { items: items as any, total: items.length };
+    return { items: items as any, total: totalCount };
   }
 
   async getStats() {

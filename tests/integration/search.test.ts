@@ -80,4 +80,48 @@ describe("Search Integration", () => {
         expect(res.status).toBe(200);
         expect(res.body).toHaveLength(0);
     }, 15000);
+
+    it("should rank title matches higher than description matches", async () => {
+        const keyword = `RankTest${timestamp}`;
+
+        // Item 1: Keyword in description
+        const res1 = await request(app).post("/api/found-items").send({
+            category: "electronics",
+            title: "Common Item",
+            description: `This is a description with ${keyword}`,
+            location: "Lab",
+            dateFound: "2025-12-25",
+            imageUrls: [],
+            contactName: "Tester",
+            contactPhone: "0789999991",
+            finderEmail: "tester1@example.com",
+            finderPhone: "0780000001"
+        });
+        if (res1.status === 201 || res1.status === 200) {
+            await storage.updateFoundItemStatus(res1.body.id, 'active');
+        }
+
+        // Item 2: Keyword in title
+        const res2 = await request(app).post("/api/found-items").send({
+            category: "electronics",
+            title: `Item with ${keyword}`,
+            description: "Common description",
+            location: "Lab",
+            dateFound: "2025-12-25",
+            imageUrls: [],
+            contactName: "Tester",
+            contactPhone: "0789999992",
+            finderEmail: "tester2@example.com",
+            finderPhone: "0780000002"
+        });
+        if (res2.status === 201 || res2.status === 200) {
+            await storage.updateFoundItemStatus(res2.body.id, 'active');
+        }
+
+        const res = await request(app).get(`/api/items?search=${keyword}`);
+        expect(res.status).toBe(200);
+        expect(res.body.length).toBeGreaterThanOrEqual(2);
+        // The one with keyword in title should be first
+        expect(res.body[0].title).toContain(keyword);
+    }, 15000);
 });
