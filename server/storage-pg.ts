@@ -647,10 +647,11 @@ export class PgStorage implements IStorage {
     const page = filters.page || 1;
     const limit = filters.limit || 20;
     const offset = (page - 1) * limit;
-    const queryTerm = filters.query ? `%${filters.query}%` : '%';
     const type = filters.type || 'all';
     const cat = filters.category && filters.category !== 'all' ? filters.category : null;
     const loc = filters.location ? `%${filters.location}%` : null;
+
+    const query = filters.query ? sql`websearch_to_tsquery('english', ${filters.query})` : null;
 
     let items: any[] = [];
     let total = 0;
@@ -660,12 +661,8 @@ export class PgStorage implements IStorage {
     // Search Found Items
     if (type === 'all' || type === 'found') {
       const conditions = [eq(foundItems.status, 'active' as any)];
-      if (filters.query) {
-        conditions.push(or(
-          ilike(foundItems.title, queryTerm),
-          ilike(foundItems.description, queryTerm),
-          ilike(foundItems.location, queryTerm)
-        ) as any);
+      if (query) {
+        conditions.push(sql`${foundItems.searchVector} @@ ${query}`);
       }
       if (cat) conditions.push(eq(foundItems.category, cat));
       if (loc) conditions.push(ilike(foundItems.location, loc));
@@ -682,7 +679,8 @@ export class PgStorage implements IStorage {
         contactPhone: foundItems.contactPhone,
         status: foundItems.status,
         tags: foundItems.tags,
-        createdAt: foundItems.createdAt
+        createdAt: foundItems.createdAt,
+        relevance: query ? sql<number>`ts_rank(${foundItems.searchVector}, ${query})` : sql<number>`0`
       })
         .from(foundItems)
         .where(and(...conditions))
@@ -695,12 +693,8 @@ export class PgStorage implements IStorage {
     // Search Lost Items
     if (type === 'all' || type === 'lost') {
       const conditions = [eq(lostItems.status, 'active' as any)];
-      if (filters.query) {
-        conditions.push(or(
-          ilike(lostItems.title, queryTerm),
-          ilike(lostItems.description, queryTerm),
-          ilike(lostItems.location, queryTerm)
-        ) as any);
+      if (query) {
+        conditions.push(sql`${lostItems.searchVector} @@ ${query}`);
       }
       if (cat) conditions.push(eq(lostItems.category, cat));
       if (loc) conditions.push(ilike(lostItems.location, loc));
@@ -717,7 +711,8 @@ export class PgStorage implements IStorage {
         contactPhone: lostItems.contactPhone,
         status: lostItems.status,
         tags: lostItems.tags,
-        createdAt: lostItems.createdAt
+        createdAt: lostItems.createdAt,
+        relevance: query ? sql<number>`ts_rank(${lostItems.searchVector}, ${query})` : sql<number>`0`
       })
         .from(lostItems)
         .where(and(...conditions))
@@ -727,8 +722,11 @@ export class PgStorage implements IStorage {
       items.push(...lost.map(i => ({ ...i, type: 'lost', date: i.dateLost })));
     }
 
-    // Sort combined results by createdAt
-    items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    // Sort combined results by relevance then createdAt
+    items.sort((a, b) => {
+      if (b.relevance !== a.relevance) return b.relevance - a.relevance;
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    });
 
     // Slice for pagination if combined
     if (type === 'all') {
