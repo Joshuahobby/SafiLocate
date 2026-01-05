@@ -48,6 +48,11 @@ function Router() {
         <Route path="/payment/verify" component={PaymentVerifyPage} />
         <Route path="/payment" component={PaymentPage} />
         <Route path="/search" component={SearchPage} />
+        <Route path="/safety" component={lazy(() => import("@/pages/safety"))} />
+        <Route path="/faq" component={lazy(() => import("@/pages/faq"))} />
+        <Route path="/terms" component={lazy(() => import("@/pages/terms"))} />
+        <Route path="/privacy" component={lazy(() => import("@/pages/privacy"))} />
+        <Route path="/cookies" component={lazy(() => import("@/pages/cookies"))} />
         <Route path="/item/:id" component={ItemDetail} />
 
         {/* User dashboard - requires authentication */}

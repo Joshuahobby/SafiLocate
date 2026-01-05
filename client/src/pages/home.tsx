@@ -212,7 +212,7 @@ export default function Home() {
               <ul className="space-y-4 text-sm text-muted-foreground">
                 <li><Link href="/faq" className="hover:text-primary transition-colors">Help Center</Link></li>
                 <li><Link href="/safety" className="hover:text-primary transition-colors">Safety Guidelines</Link></li>
-                <li className="opacity-50 cursor-not-allowed" title="Coming Soon">Terms of Service</li>
+                <li><Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
 
@@ -229,8 +229,9 @@ export default function Home() {
           <div className="mt-20 pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
             <p>© {new Date().getFullYear()} SafiLocate Inc. All rights reserved.</p>
             <div className="flex gap-6">
-              <span className="hover:text-foreground cursor-pointer">Privacy Policy</span>
-              <span className="hover:text-foreground cursor-pointer">Cookie Policy</span>
+              <Link href="/privacy" className="hover:text-foreground cursor-pointer transition-colors">Privacy Policy</Link>
+              <Link href="/cookies" className="hover:text-foreground cursor-pointer transition-colors">Cookie Policy</Link>
+              <Link href="/terms" className="hover:text-foreground cursor-pointer transition-colors">Terms of Service</Link>
             </div>
           </div>
         </div>
