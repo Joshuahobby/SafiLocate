@@ -6,10 +6,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Search, MapPin, ShieldCheck, ArrowRight, Wallet, Phone, Zap, Globe } from "lucide-react";
+import { Search, ShieldCheck, ArrowRight, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import Typewriter from "typewriter-effect";
 import { Navbar } from "@/components/layout/navbar";
+import { HowItWorks } from "@/components/home/how-it-works";
+import { TrustStats } from "@/components/home/trust-stats";
+import { RecentItems } from "@/components/home/recent-items";
 
 export default function Home() {
   return (
@@ -19,7 +22,7 @@ export default function Home() {
 
       <main className="flex-1">
         {/* Premium Split Hero Section - Adjusted for coverage */}
-        <section className="relative min-h-[85vh] flex items-center bg-hero-wave pt-16 pb-12 lg:pt-20 lg:pb-16">
+        <section className="relative min-h-[85vh] flex items-center bg-hero-wave pt-16 pb-12 lg:pt-20 lg:pb-16 overflow-hidden">
           <div className="container mx-auto px-8 lg:px-12 relative z-10 text-center lg:text-left">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
 
@@ -35,12 +38,12 @@ export default function Home() {
                   SafiLocate v2.0 is Live in Rwanda
                 </div>
 
-                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading font-extrabold tracking-tight text-foreground leading-[1.1] text-balance">
+                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading font-extrabold tracking-tight text-foreground leading-[1.1] text-balance min-h-[160px] sm:min-h-[auto]">
                   <span className="block">Lost your
                     <span className="text-primary inline-block ml-2">
                       <Typewriter
                         options={{
-                          strings: ['Keys?', 'Wallet?', 'ID Card?', 'Passport?', 'Hope?'],
+                          strings: ['Keys?', 'Wallet?', 'ID Card?', 'Passport?', 'Phone?'],
                           autoStart: true,
                           loop: true,
                           deleteSpeed: 50,
@@ -60,7 +63,7 @@ export default function Home() {
                 {/* Enhanced Search Pill - Left Aligned on Desktop */}
                 <div className="w-full max-w-md mx-auto lg:mx-0 relative group pt-2">
                   <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                  <div className="glass p-1.5 rounded-full flex items-center shadow-xl shadow-primary/5 ring-1 ring-black/5 relative bg-white/80 focus-within:bg-white focus-within:ring-primary/30 transition-all">
+                  <div className="glass p-1.5 rounded-full flex items-center shadow-xl shadow-primary/5 ring-1 ring-black/5 relative bg-white/80 dark:bg-slate-900/80 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:ring-primary/30 transition-all">
                     <div className="pl-4 text-muted-foreground group-focus-within:text-primary transition-colors">
                       <Search className="w-5 h-5" />
                     </div>
@@ -79,7 +82,7 @@ export default function Home() {
 
                 {/* Typewriter Trust Badges with Tooltips */}
                 <TooltipProvider delayDuration={0}>
-                  <div className="pt-2 flex items-center justify-center lg:justify-start gap-5 text-xs font-medium text-muted-foreground/80">
+                  <div className="pt-2 flex flex-wrap justify-center lg:justify-start gap-4 sm:gap-6 text-xs font-medium text-muted-foreground/80">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="flex items-center gap-1.5 cursor-help hover:text-emerald-600 transition-colors">
@@ -118,7 +121,7 @@ export default function Home() {
                   <img
                     src="/assets/hero-rwanda-isolated.png"
                     alt="Digital Map of Rwanda"
-                    className="w-full max-w-[550px] mx-auto drop-shadow-2xl mix-blend-multiply contrast-125"
+                    className="w-full max-w-[550px] mx-auto drop-shadow-2xl mix-blend-multiply dark:mix-blend-normal contrast-125"
                   />
                 </div>
                 {/* Decorative Glows - Adjusted for blue theme */}
@@ -128,13 +131,22 @@ export default function Home() {
           </div>
         </section>
 
+        {/* How It Works Section - NEW */}
+        <HowItWorks />
+
+        {/* Trust Stats Section - NEW */}
+        <TrustStats />
+
         {/* Action Cards Section - Overlapping or distinct */}
-        <section className="py-20 bg-white relative z-20 -mt-10 lg:-mt-20">
+        <section className="py-24 bg-background relative z-20">
+          {/* Decorative Background Blob */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-4xl bg-primary/5 blur-[100px] rounded-full -z-10 pointer-events-none" />
+
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               <Link href="/report-lost">
-                <div className="group relative bg-white p-8 rounded-[2rem] border border-border/50 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:border-primary/20 hover:-translate-y-2 transition-all duration-300 overflow-hidden cursor-pointer h-full">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50/50 rounded-bl-[4rem] group-hover:scale-150 transition-transform duration-500 ease-out z-0" />
+                <div className="group relative bg-card p-8 rounded-[2rem] border border-border/50 shadow-xl shadow-slate-200/50 dark:shadow-none hover:shadow-2xl hover:border-primary/20 hover:-translate-y-2 transition-all duration-300 overflow-hidden cursor-pointer h-full">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50/50 dark:bg-orange-900/10 rounded-bl-[4rem] group-hover:scale-150 transition-transform duration-500 ease-out z-0" />
                   <div className="relative z-10 flex flex-col h-full">
                     <div className="mb-6">
                       <img src="/assets/lost-3d.png" alt="Lost Item" className="w-20 h-20 object-contain drop-shadow-md group-hover:scale-110 transition-transform" />
@@ -150,8 +162,8 @@ export default function Home() {
               </Link>
 
               <Link href="/report-found">
-                <div className="group relative bg-white p-8 rounded-[2rem] border border-border/50 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:border-primary/20 hover:-translate-y-2 transition-all duration-300 overflow-hidden cursor-pointer h-full">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50/50 rounded-bl-[4rem] group-hover:scale-150 transition-transform duration-500 ease-out z-0" />
+                <div className="group relative bg-card p-8 rounded-[2rem] border border-border/50 shadow-xl shadow-slate-200/50 dark:shadow-none hover:shadow-2xl hover:border-primary/20 hover:-translate-y-2 transition-all duration-300 overflow-hidden cursor-pointer h-full">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-bl-[4rem] group-hover:scale-150 transition-transform duration-500 ease-out z-0" />
                   <div className="relative z-10 flex flex-col h-full">
                     <div className="mb-6">
                       <img src="/assets/found-3d.png" alt="Found Item" className="w-20 h-20 object-contain drop-shadow-md group-hover:scale-110 transition-transform" />
@@ -169,57 +181,11 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Recent Items Preview */}
-        <section className="py-24 bg-muted/30 border-t border-border">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-12">
-              <div>
-                <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground">Recently Found</h2>
-                <p className="text-muted-foreground mt-2 text-lg">New items reported in the last 24 hours</p>
-              </div>
-              <Link href="/search">
-                <Button variant="ghost" className="hidden sm:flex group text-primary font-bold hover:bg-primary/10">
-                  View All Items
-                  <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Button>
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="group bg-card rounded-2xl border border-border/50 overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300 cursor-pointer">
-                  <div className="aspect-[4/3] bg-muted w-full relative overflow-hidden">
-                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur text-[10px] uppercase font-bold px-2 py-1 rounded-md shadow-sm text-emerald-700 tracking-wide z-10">
-                      Found
-                    </div>
-                    <div className="w-full h-full flex items-center justify-center bg-secondary/50 text-muted-foreground group-hover:scale-105 transition-transform duration-500">
-                      <Wallet className="w-10 h-10 opacity-20" />
-                    </div>
-                  </div>
-                  <div className="p-4 space-y-2">
-                    <h3 className="font-heading font-semibold text-lg leading-tight group-hover:text-primary transition-colors">National ID Card</h3>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <MapPin className="w-3.5 h-3.5 mr-1.5 text-primary/60" />
-                      Kigali, Downtown
-                    </div>
-                    <div className="pt-2 flex items-center justify-between">
-                      <span className="text-xs font-medium text-muted-foreground/60">2 hours ago</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-12 text-center sm:hidden">
-              <Link href="/search">
-                <Button variant="outline" size="lg" className="w-full rounded-xl">View All Items</Button>
-              </Link>
-            </div>
-          </div>
-        </section>
+        {/* Recent Items Preview - Future proofed structure */}
+        <RecentItems />
       </main>
 
-      <footer className="border-t py-20 bg-white">
+      <footer className="border-t py-20 bg-card">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-12">
             <div className="md:col-span-2 space-y-6">
@@ -228,7 +194,7 @@ export default function Home() {
                 <span className="font-heading font-bold text-xl tracking-tight">SafiLocate</span>
               </div>
               <p className="text-muted-foreground leading-relaxed max-w-sm">
-                We are building the trust layer for lost and found items. Join thousands of users making recovery simple and secure.
+                The trusted platform for lost and found recovery. Join our community to make recovery simple, fast, and secure.
               </p>
             </div>
 
@@ -246,7 +212,7 @@ export default function Home() {
               <ul className="space-y-4 text-sm text-muted-foreground">
                 <li><Link href="/faq" className="hover:text-primary transition-colors">Help Center</Link></li>
                 <li><Link href="/safety" className="hover:text-primary transition-colors">Safety Guidelines</Link></li>
-                <li><Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
+                <li className="opacity-50 cursor-not-allowed" title="Coming Soon">Terms of Service</li>
               </ul>
             </div>
 
@@ -254,10 +220,8 @@ export default function Home() {
               <h4 className="font-bold text-foreground mb-6">Contact</h4>
               <div className="space-y-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                    <Phone className="w-4 h-4" />
-                  </div>
-                  <span>+250 788 000 000</span>
+                  <span>Contact Support:</span>
+                  <a href="mailto:support@safilocate.rw" className="text-primary hover:underline">support@safilocate.rw</a>
                 </div>
               </div>
             </div>
@@ -265,8 +229,8 @@ export default function Home() {
           <div className="mt-20 pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
             <p>© {new Date().getFullYear()} SafiLocate Inc. All rights reserved.</p>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-foreground">Privacy</a>
-              <a href="#" className="hover:text-foreground">Cookies</a>
+              <span className="hover:text-foreground cursor-pointer">Privacy Policy</span>
+              <span className="hover:text-foreground cursor-pointer">Cookie Policy</span>
             </div>
           </div>
         </div>
