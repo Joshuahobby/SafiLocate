@@ -133,6 +133,7 @@ export const claims = pgTable("claims", {
 }, (table) => ({
   itemIdIdx: index("idx_claims_item_id").on(table.itemId),
   statusIdx: index("idx_claims_status").on(table.status),
+  userIdIdx: index("idx_claims_user_id").on(table.userId),
   createdAtIdx: index("idx_claims_created_at").on(table.createdAt),
 }));
 
@@ -178,6 +179,7 @@ export const reports = pgTable("reports", {
 }, (table) => ({
   itemIdIdx: index("idx_reports_item_id").on(table.itemId),
   claimIdIdx: index("idx_reports_claim_id").on(table.claimId),
+  reporterEmailIdx: index("idx_reports_reporter_email").on(table.reporterEmail),
   statusIdx: index("idx_reports_status").on(table.status),
   createdAtIdx: index("idx_reports_created_at").on(table.createdAt),
 }));

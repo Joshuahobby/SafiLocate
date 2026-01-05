@@ -42,7 +42,13 @@ export function ItemCard({ id, title, category, location, date, type, image, cla
           {/* Placeholder Image State */}
           <div className="w-full h-full flex items-center justify-center bg-secondary/30 text-muted-foreground group-hover:scale-110 transition-transform duration-700 ease-out">
             {image ? (
-              <img src={image} alt={title} className="w-full h-full object-cover" />
+              <img
+                src={image}
+                alt={title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
             ) : (
               getCategoryIcon(category)
             )}
