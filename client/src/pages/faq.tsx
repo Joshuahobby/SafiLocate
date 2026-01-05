@@ -1,4 +1,5 @@
 import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
 import {
     Accordion,
     AccordionContent,
@@ -31,9 +32,9 @@ export default function FAQ() {
     ];
 
     return (
-        <div className="min-h-screen bg-background font-sans">
+        <div className="min-h-screen bg-background font-sans flex flex-col">
             <Navbar />
-            <main className="container mx-auto px-4 py-24 max-w-3xl">
+            <main className="container mx-auto px-4 py-24 max-w-3xl flex-1">
                 <div className="text-center mb-16">
                     <h1 className="text-4xl font-heading font-bold mb-4">Frequently Asked Questions</h1>
                     <p className="text-xl text-muted-foreground">Everything you need to know about the platform.</p>
@@ -52,6 +53,7 @@ export default function FAQ() {
                     ))}
                 </Accordion>
             </main>
+            <Footer />
         </div>
     );
 }

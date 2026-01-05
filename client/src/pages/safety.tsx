@@ -1,4 +1,5 @@
 import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
 import { Shield, UserCheck, MapPin, Clock, AlertTriangle } from "lucide-react";
 
 export default function Safety() {
@@ -31,9 +32,9 @@ export default function Safety() {
     ];
 
     return (
-        <div className="min-h-screen bg-background font-sans">
+        <div className="min-h-screen bg-background font-sans flex flex-col">
             <Navbar />
-            <main className="container mx-auto px-4 py-24 max-w-4xl">
+            <main className="container mx-auto px-4 py-24 max-w-4xl flex-1">
                 <div className="text-center mb-16">
                     <h1 className="text-4xl font-heading font-bold mb-4">Safety Guidelines</h1>
                     <p className="text-xl text-muted-foreground">Keep these tips in mind for a secure recovery experience.</p>
@@ -65,6 +66,8 @@ export default function Safety() {
                     </div>
                 </div>
             </main>
+            <Footer />
         </div>
     );
 }
+

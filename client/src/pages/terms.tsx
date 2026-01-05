@@ -1,10 +1,11 @@
 import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
 
 export default function Terms() {
     return (
-        <div className="min-h-screen bg-background font-sans">
+        <div className="min-h-screen bg-background font-sans flex flex-col">
             <Navbar />
-            <main className="container mx-auto px-4 py-24 max-w-4xl prose prose-slate dark:prose-invert">
+            <main className="container mx-auto px-4 py-24 max-w-4xl prose prose-slate dark:prose-invert flex-1">
                 <h1 className="font-heading mb-8">Terms of Service</h1>
                 <p className="text-lg text-muted-foreground mb-8">Last Updated: January 2025</p>
 
@@ -25,6 +26,7 @@ export default function Terms() {
 
                 <div className="h-12" />
             </main>
+            <Footer />
         </div>
     );
 }

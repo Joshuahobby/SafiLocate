@@ -8,6 +8,11 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { AdminRoute, ProtectedRoute } from "@/lib/protected-route";
 import { Loader2 } from "lucide-react";
+import Safety from "@/pages/safety";
+import FAQ from "@/pages/faq";
+import Terms from "@/pages/terms";
+import Privacy from "@/pages/privacy";
+import Cookies from "@/pages/cookies";
 
 // Lazy load pages
 const Home = lazy(() => import("@/pages/home"));
@@ -48,11 +53,11 @@ function Router() {
         <Route path="/payment/verify" component={PaymentVerifyPage} />
         <Route path="/payment" component={PaymentPage} />
         <Route path="/search" component={SearchPage} />
-        <Route path="/safety" component={lazy(() => import("@/pages/safety"))} />
-        <Route path="/faq" component={lazy(() => import("@/pages/faq"))} />
-        <Route path="/terms" component={lazy(() => import("@/pages/terms"))} />
-        <Route path="/privacy" component={lazy(() => import("@/pages/privacy"))} />
-        <Route path="/cookies" component={lazy(() => import("@/pages/cookies"))} />
+        <Route path="/safety" component={Safety} />
+        <Route path="/faq" component={FAQ} />
+        <Route path="/terms" component={Terms} />
+        <Route path="/privacy" component={Privacy} />
+        <Route path="/cookies" component={Cookies} />
         <Route path="/item/:id" component={ItemDetail} />
 
         {/* User dashboard - requires authentication */}
