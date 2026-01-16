@@ -215,8 +215,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
 });
 
 export const insertFoundItemSchema = createInsertSchema(foundItems, {
-  finderEmail: z.string().email().min(1, "Email is required"),
-  finderPhone: z.string().min(1, "Phone is required"),
+  finderEmail: z.string().email().optional().nullable(),
+  finderPhone: z.string().optional().nullable(),
+  imageUrls: z.array(z.string()).optional(),
 }).pick({
   category: true,
   title: true,

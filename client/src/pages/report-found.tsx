@@ -39,7 +39,7 @@ const foundItemSchema = z.object({
   description: z.string().min(10, "Please provide more detail"),
   location: z.string().min(3, "Location is required"),
   dateFound: z.string().min(1, "Date is required"),
-  imageUrl: z.string().optional(),
+  imageUrls: z.array(z.string()).optional(),
   contactPhone: z.string().min(10, "Valid phone number required").regex(/^(\+?250|0)7[0-9]{8}$/, "Must be a valid Rwanda phone number"),
   contactName: z.string().min(2, "Name is required"),
 });
@@ -76,7 +76,7 @@ export default function ReportFound() {
       description: "",
       location: "",
       dateFound: new Date().toISOString().split('T')[0],
-      imageUrl: "",
+      imageUrls: [],
       contactPhone: "",
       contactName: "",
     },
@@ -87,7 +87,7 @@ export default function ReportFound() {
     let fieldsToValidate: (keyof FormData)[] = [];
 
     if (step === 0) fieldsToValidate = ['category', 'title', 'description'];
-    if (step === 1) fieldsToValidate = ['location', 'dateFound', 'imageUrl'];
+    if (step === 1) fieldsToValidate = ['location', 'dateFound', 'imageUrls'];
     if (step === 2) fieldsToValidate = ['contactName', 'contactPhone'];
 
     const isValid = await form.trigger(fieldsToValidate);
@@ -327,7 +327,7 @@ export default function ReportFound() {
 
                     <FormField
                       control={form.control}
-                      name="imageUrl"
+                      name="imageUrls"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-lg font-semibold">Photo Evidence</FormLabel>
@@ -336,8 +336,8 @@ export default function ReportFound() {
                           </div>
                           <FormControl>
                             <ImageUpload
-                              value={field.value || null}
-                              onChange={field.onChange}
+                              value={field.value?.[0] || null}
+                              onChange={(url) => field.onChange(url ? [url] : [])}
                               className="bg-muted/30 border-muted-foreground/20"
                             />
                           </FormControl>

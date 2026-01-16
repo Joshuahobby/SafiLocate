@@ -149,7 +149,7 @@ export const initPromise = (async () => {
     console.error("Critical error during server initialization:", error);
     throw error;
   }
-})().catch(err => {
-  console.error("Failed to initialize server:", err);
-  throw err;
+})().catch((err) => {
+    console.error("Initialization failed permanently:", err);
+    // Remove individual throw to prevent unhandled rejection outside the handler
 });
