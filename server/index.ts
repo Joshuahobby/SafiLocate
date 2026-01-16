@@ -178,5 +178,5 @@ export const initPromise = (async () => {
 })()
 .catch((err) => {
     console.error("Initialization failed permanently:", err);
-    // Remove individual throw to prevent unhandled rejection outside the handler
+    throw err; // Ensure the promise rejects so api/index.ts can handle it
 });
