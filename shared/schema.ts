@@ -217,7 +217,11 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertFoundItemSchema = createInsertSchema(foundItems, {
   finderEmail: z.string().email().optional().nullable(),
   finderPhone: z.string().optional().nullable(),
-  imageUrls: z.array(z.string()).optional(),
+  imageUrls: z.array(z.string()).optional().nullable(),
+  contactName: z.string().optional().nullable(),
+  contactPhone: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  location: z.string().optional().nullable(),
 }).pick({
   category: true,
   title: true,
@@ -231,7 +235,17 @@ export const insertFoundItemSchema = createInsertSchema(foundItems, {
   finderPhone: true,
 });
 
-export const insertLostItemSchema = createInsertSchema(lostItems).pick({
+export const insertLostItemSchema = createInsertSchema(lostItems, {
+  imageUrls: z.array(z.string()).optional().nullable(),
+  identifier: z.string().optional().nullable(),
+  reward: z.string().optional().nullable(),
+  contactName: z.string().optional().nullable(),
+  contactPhone: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  location: z.string().optional().nullable(),
+  seekerEmail: z.string().email().optional().nullable(),
+  seekerPhone: z.string().optional().nullable(),
+}).pick({
   category: true,
   title: true,
   description: true,
@@ -248,7 +262,11 @@ export const insertLostItemSchema = createInsertSchema(lostItems).pick({
   customPrice: true,
 });
 
-export const insertClaimSchema = createInsertSchema(claims).pick({
+export const insertClaimSchema = createInsertSchema(claims, {
+  claimantEmail: z.string().email().optional().nullable(),
+  description: z.string().optional().nullable(),
+  evidencePhotos: z.array(z.string()).optional().nullable(),
+}).pick({
   itemId: true,
   itemType: true,
   claimantName: true,

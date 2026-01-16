@@ -113,29 +113,44 @@ import { setupAuth } from "./auth";
 
 // Export the initialization promise so tests can wait for it
 export const initPromise = (async () => {
-  console.log("Starting server initialization...");
+  console.log("Starting server initialization sequence...");
   try {
-    console.log("Setting up auth...");
+    console.log("1. Setting up auth...");
     setupAuth(app);
-    console.log("Auth setup complete.");
+    console.log("✓ Auth setup complete.");
 
-    console.log("Registering routes...");
+    console.log("2. Registering routes...");
     await registerRoutes(httpServer, app);
-    console.log("Routes registered.");
+    console.log("✓ Routes registered.");
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      console.error("Express Error Middleware caught:", err);
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
-      res.status(status).json({ message });
-      throw err;
+      
+      // If headers sent, we can't send another response
+      if (res.headersSent) {
+          console.error("Headers already sent, cannot send error response.");
+          return;
+      }
+
+      res.status(status).json({ 
+          message,
+          error: err.name,
+          details: err.errors || err.details || undefined 
+      });
+      // Don't re-throw here on Vercel as it can crash the lambda before logs are flushed
     });
 
     if (process.env.NODE_ENV === "production") {
-      console.log("Production mode: serving static files...");
+      console.log("3. Production mode: serving static files...");
       serveStatic(app);
+      console.log("✓ Static files setup.");
     } else if (process.env.NODE_ENV !== "test") {
+      console.log("3. Development mode: setting up Vite...");
       const { setupVite } = await import("./vite");
       await setupVite(httpServer, app);
+      console.log("✓ Vite setup complete.");
     }
 
     const port = parseInt(process.env.PORT || "5000", 10);
@@ -144,12 +159,24 @@ export const initPromise = (async () => {
         log(`serving on port ${port}`);
       });
     }
-    console.log("Server initialization successful.");
-  } catch (error) {
-    console.error("Critical error during server initialization:", error);
+    console.log("✓ Server initialization successful.");
+  } catch (error: any) {
+    console.error("!!! CRITICAL ERROR DURING SERVER INITIALIZATION !!!");
+    console.error("Error Name:", error?.name);
+    console.error("Error Message:", error?.message);
+    
+    // Detailed Zod Error logging
+    if (error?.name === 'ZodError') {
+        console.error("Zod Validation Errors:", JSON.stringify(error.errors, null, 2));
+    }
+    
+    console.error("Stack Trace:", error?.stack);
+    
+    // Rethrow to reject initPromise
     throw error;
   }
-})().catch((err) => {
+})()
+.catch((err) => {
     console.error("Initialization failed permanently:", err);
     // Remove individual throw to prevent unhandled rejection outside the handler
 });

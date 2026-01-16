@@ -84,9 +84,6 @@ export async function registerRoutes(
   // Register Payment Routes
   app.use("/api/payments", paymentRoutes);
 
-  // Register Payment Routes
-  app.use("/api/payments", paymentRoutes);
-
   // Register Upload Route
   app.use("/api/upload", uploadRoutes);
 
@@ -97,7 +94,7 @@ export async function registerRoutes(
       if (data.imageUrls) {
         data.imageUrls = await imageService.uploadImages(data.imageUrls) as string[];
       }
-      const tags = await aiService.generateTags(data.title, data.description);
+      const tags = await aiService.generateTags(data.title ?? "", data.description ?? "");
       const item = await storage.createFoundItem({ ...data, tags });
       res.json(item);
 
@@ -109,10 +106,12 @@ export async function registerRoutes(
         );
       }
     } catch (error) {
-      if (process.env.NODE_ENV === 'test' || true) {
-        return res.status(400).json({ error: "Invalid data", details: error });
-      }
-      res.status(400).json({ error: "Invalid data" });
+      console.error("Found item creation error:", error);
+      return res.status(400).json({ 
+        error: "Invalid found item data", 
+        details: error instanceof Error ? error.message : String(error),
+        zodError: (error as any)?.name === 'ZodError' ? (error as any).errors : undefined
+      });
     }
   });
 
@@ -123,7 +122,7 @@ export async function registerRoutes(
       if (data.imageUrls) {
         data.imageUrls = await imageService.uploadImages(data.imageUrls) as string[];
       }
-      const tags = await aiService.generateTags(data.title, data.description);
+      const tags = await aiService.generateTags(data.title ?? "", data.description ?? "");
       const item = await storage.createLostItem({ ...data, tags });
       res.json(item);
 
@@ -135,10 +134,12 @@ export async function registerRoutes(
         );
       }
     } catch (error) {
-      if (error instanceof Error) {
-        console.error("Lost item validation/creation error:", error);
-      }
-      res.status(400).json({ error: "Invalid data", details: error instanceof Error ? error.message : String(error) });
+      console.error("Lost item creation error:", error);
+      return res.status(400).json({ 
+        error: "Invalid lost item data", 
+        details: error instanceof Error ? error.message : String(error),
+        zodError: (error as any)?.name === 'ZodError' ? (error as any).errors : undefined
+      });
     }
   });
 
@@ -170,8 +171,13 @@ export async function registerRoutes(
       })();
 
       res.status(201).json(claim);
-    } catch (e) {
-      res.status(400).json({ error: "Invalid claim data" });
+    } catch (error) {
+      console.error("Claim creation error:", error);
+      return res.status(400).json({ 
+        error: "Invalid claim data", 
+        details: error instanceof Error ? error.message : String(error),
+        zodError: (error as any)?.name === 'ZodError' ? (error as any).errors : undefined
+      });
     }
   });
 
