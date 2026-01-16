@@ -127,7 +127,7 @@ export function ClaimDialog({ itemId, itemType, trigger }: ClaimDialogProps) {
                                         <FormItem>
                                             <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Full Name</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="John Doe" className="h-11 rounded-xl bg-background/50" {...field} />
+                                                <Input placeholder="John Doe" className="h-11 rounded-xl bg-background/50" {...field} value={field.value || ''} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -140,7 +140,7 @@ export function ClaimDialog({ itemId, itemType, trigger }: ClaimDialogProps) {
                                         <FormItem>
                                             <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Phone Number</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="078 000 0000" className="h-11 rounded-xl bg-background/50" {...field} />
+                                                <Input placeholder="078 000 0000" className="h-11 rounded-xl bg-background/50" {...field} value={field.value || ''} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
