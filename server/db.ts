@@ -17,4 +17,11 @@ export const pool = new Pool({
     connectionTimeoutMillis: 10000,
     ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
 });
+
+pool.connect().then(client => {
+    console.log('Database connected successfully');
+    client.release();
+}).catch(err => {
+    console.error('Database connection failed:', err);
+});
 export const db = drizzle(pool, { schema });
