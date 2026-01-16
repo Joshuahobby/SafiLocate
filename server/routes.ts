@@ -320,84 +320,96 @@ export async function registerRoutes(
 
   // Get Items (Unified Search)
   app.get("/api/items", async (req, res) => {
-    const search = req.query.search as string;
-    const category = req.query.category as string;
-    const location = req.query.location as string;
-    const type = req.query.type as string;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+    try {
+      const search = req.query.search as string;
+      const category = req.query.category as string;
+      const location = req.query.location as string;
+      const type = req.query.type as string;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
 
-    // Optimized Search using Union and Scoring
-    if (search) {
-      const result = await storage.searchItems({
-        query: search,
-        type: (type as "found" | "lost" | "all") || 'all',
-        category: category !== 'all' ? category : undefined,
-        location,
-        page,
-        limit
-      });
+      // Optimized Search using Union and Scoring
+      if (search) {
+        const result = await storage.searchItems({
+          query: search,
+          type: (type as "found" | "lost" | "all") || 'all',
+          category: category !== 'all' ? category : undefined,
+          location,
+          page,
+          limit
+        });
 
-      const mappedItems = result.items.map(i => {
-        const isFound = (i as any).type === 'found';
-        return {
+        const mappedItems = result.items.map(i => {
+          const isFound = (i as any).type === 'found';
+          return {
+            ...i,
+            date: isFound ? (i as FoundItem).dateFound : (i as LostItem).dateLost,
+            image: i.imageUrls?.[0]
+          };
+        });
+
+        const sanitizedItems = await Promise.all(
+          mappedItems.map(i => sanitizeItem(i, (req as any).user))
+        );
+        return res.json(sanitizedItems);
+      }
+
+      let foundItems: any[] = [];
+      let lostItems: any[] = [];
+
+      // Fetch Found Items
+      if (!type || type === 'found' || type === 'all') {
+        const result = await storage.listFoundItems({
+          search, // This won't be used if we enter the block above, but keeping for safety if no search term but filters exist
+          category: category !== 'all' ? category : undefined,
+          location,
+          page,
+          limit
+        });
+        foundItems = result.items.map(i => ({
           ...i,
-          date: isFound ? (i as FoundItem).dateFound : (i as LostItem).dateLost,
+          type: "found" as const,
+          date: i.dateFound,
           image: i.imageUrls?.[0]
-        };
+        }));
+      }
+
+      // Fetch Lost Items
+      if (!type || type === 'lost' || type === 'all') {
+        const result = await storage.listLostItems({
+          search,
+          category: category !== 'all' ? category : undefined,
+          location,
+          page,
+          limit
+        });
+        lostItems = result.items.map(i => ({
+          ...i,
+          type: "lost" as const,
+          date: i.dateLost,
+          image: i.imageUrls?.[0]
+        }));
+      }
+
+      // Combine and Sort
+      const allItems = [...foundItems, ...lostItems];
+      allItems.sort((a, b) => {
+         const dateA = a.date ? new Date(a.date).getTime() : 0;
+         const dateB = b.date ? new Date(b.date).getTime() : 0;
+         return dateB - dateA;
       });
 
       const sanitizedItems = await Promise.all(
-        mappedItems.map(i => sanitizeItem(i, (req as any).user))
+        allItems.map(i => sanitizeItem(i, (req as any).user))
       );
-      return res.json(sanitizedItems);
-    }
-
-    let foundItems: any[] = [];
-    let lostItems: any[] = [];
-
-    // Fetch Found Items
-    if (!type || type === 'found' || type === 'all') {
-      const result = await storage.listFoundItems({
-        search, // This won't be used if we enter the block above, but keeping for safety if no search term but filters exist
-        category: category !== 'all' ? category : undefined,
-        location,
-        page,
-        limit
+      res.json(sanitizedItems);
+    } catch (error) {
+      console.error("Fetch items error:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch items",
+        details: error instanceof Error ? error.message : String(error)
       });
-      foundItems = result.items.map(i => ({
-        ...i,
-        type: "found" as const,
-        date: i.dateFound,
-        image: i.imageUrls?.[0]
-      }));
     }
-
-    // Fetch Lost Items
-    if (!type || type === 'lost' || type === 'all') {
-      const result = await storage.listLostItems({
-        search,
-        category: category !== 'all' ? category : undefined,
-        location,
-        page,
-        limit
-      });
-      lostItems = result.items.map(i => ({
-        ...i,
-        type: "lost" as const,
-        date: i.dateLost,
-        image: i.imageUrls?.[0]
-      }));
-    }
-
-    // Combine and Sort
-    const allItems = [...foundItems, ...lostItems];
-    allItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    const sanitizedItems = await Promise.all(
-      allItems.map(i => sanitizeItem(i, (req as any).user))
-    );
-    res.json(sanitizedItems);
   });
 
   // Get Single Item
