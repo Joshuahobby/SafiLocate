@@ -138,6 +138,13 @@ export class PgStorage implements IStorage {
       .insert(foundItems)
       .values({
         ...item,
+        description: item.description ?? null,
+        location: item.location ?? null,
+        contactName: item.contactName ?? null,
+        contactPhone: item.contactPhone ?? null,
+        finderEmail: item.finderEmail ?? null,
+        finderPhone: item.finderPhone ?? null,
+        imageUrls: item.imageUrls ?? null,
         status: "pending",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -275,6 +282,15 @@ export class PgStorage implements IStorage {
       .insert(lostItems)
       .values({
         ...item,
+        description: item.description ?? null,
+        location: item.location ?? null,
+        contactName: item.contactName ?? null,
+        contactPhone: item.contactPhone ?? null,
+        seekerEmail: item.seekerEmail ?? null,
+        seekerPhone: item.seekerPhone ?? null,
+        imageUrls: item.imageUrls ?? null,
+        identifier: item.identifier ?? null,
+        reward: item.reward ?? null,
         status: "pending",
         paymentStatus: "unpaid",
         createdAt: new Date(),
@@ -430,6 +446,11 @@ export class PgStorage implements IStorage {
       .insert(claims)
       .values({
         ...claimData,
+        description: claimData.description ?? null,
+        claimantName: claimData.claimantName ?? null,
+        claimantPhone: claimData.claimantPhone ?? null,
+        claimantEmail: claimData.claimantEmail ?? null,
+        evidencePhotos: claimData.evidencePhotos ?? null,
         status: "pending",
         createdAt: new Date(),
         updatedAt: new Date(),

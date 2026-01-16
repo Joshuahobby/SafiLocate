@@ -51,12 +51,12 @@ export const foundItems = pgTable("found_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   category: varchar("category", { length: 50 }).notNull(), // id_document, electronics, wallet, keys, clothing, other
   title: varchar("title", { length: 200 }).notNull(),
-  description: text("description").notNull(),
-  location: varchar("location", { length: 200 }).notNull(),
+  description: text("description"),
+  location: varchar("location", { length: 200 }),
   dateFound: date("date_found").notNull(),
   imageUrls: text("image_urls").array(), // Array of image URLs (max 3)
-  contactName: varchar("contact_name", { length: 100 }).notNull(),
-  contactPhone: varchar("contact_phone", { length: 20 }).notNull(), // Rwanda format
+  contactName: varchar("contact_name", { length: 100 }),
+  contactPhone: varchar("contact_phone", { length: 20 }), // Rwanda format
   finderEmail: text("finder_email"), // For notifications
   finderPhone: text("finder_phone"), // For SMS (optional)
   status: itemStatusEnum("status").notNull().default("pending"),
@@ -81,14 +81,14 @@ export const lostItems = pgTable("lost_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   category: varchar("category", { length: 50 }).notNull(),
   title: varchar("title", { length: 200 }).notNull(),
-  description: text("description").notNull(),
-  location: varchar("location", { length: 200 }).notNull(), // Last seen location
+  description: text("description"),
+  location: varchar("location", { length: 200 }), // Last seen location
   dateLost: date("date_lost").notNull(),
   imageUrls: text("image_urls").array(), // Array of image URLs (max 3)
   identifier: varchar("identifier", { length: 100 }), // IMEI, Serial Number, Document ID, etc.
   reward: decimal("reward", { precision: 10, scale: 2 }), // Optional reward amount
-  contactName: varchar("contact_name", { length: 100 }).notNull(),
-  contactPhone: varchar("contact_phone", { length: 20 }).notNull(),
+  contactName: varchar("contact_name", { length: 100 }),
+  contactPhone: varchar("contact_phone", { length: 20 }),
   seekerEmail: text("seeker_email"), // For notifications
   seekerPhone: text("seeker_phone"), // For SMS (optional)
   status: itemStatusEnum("status").notNull().default("pending"),
@@ -118,11 +118,11 @@ export const claims = pgTable("claims", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   itemId: varchar("item_id", { length: 255 }).notNull(), // FK to found_items.id or lost_items.id
   itemType: varchar("item_type", { length: 10 }).notNull(), // 'found' or 'lost'
-  claimantName: varchar("claimant_name", { length: 100 }).notNull(),
-  claimantPhone: varchar("claimant_phone", { length: 20 }).notNull(), // Rwanda format
+  claimantName: varchar("claimant_name", { length: 100 }),
+  claimantPhone: varchar("claimant_phone", { length: 20 }), // Rwanda format
   claimantEmail: text("claimant_email"), // Optional
   userId: varchar("user_id"), // FK to users.id (if claimed by registered user)
-  description: text("description").notNull(), // Proof of ownership (min 50 chars)
+  description: text("description"), // Proof of ownership (min 50 chars)
   evidencePhotos: text("evidence_photos").array(), // Optional evidence photos
   status: claimStatusEnum("status").notNull().default("pending"),
   verifiedAt: timestamp("verified_at"), // When claim was verified

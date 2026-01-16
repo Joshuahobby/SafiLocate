@@ -42,8 +42,8 @@ export function ClaimDialog({ itemId, itemType, trigger }: ClaimDialogProps) {
     const [open, setOpen] = useState(false);
 
     const formSchema = insertClaimSchema.extend({
-        description: insertClaimSchema.shape.description.min(50, "Description must be at least 50 characters to provide sufficient proof."),
-        claimantEmail: insertClaimSchema.shape.claimantEmail.optional().or(z.literal('')),
+        description: z.string().min(50, "Description must be at least 50 characters to provide sufficient proof."),
+        claimantEmail: z.string().email().optional().or(z.literal('')),
     });
 
     const form = useForm<z.infer<typeof formSchema>>({
