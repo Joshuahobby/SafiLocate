@@ -3,9 +3,9 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
 if (!process.env.DATABASE_URL) {
-    throw new Error(
-        "DATABASE_URL must be set. Did you forget to provision a database?",
-    );
+    console.error("DATABASE_URL must be set. Did you forget to provision a database?");
+    // Do NOT throw here, as it crashes the Vercel builder/runtime immediately before the handler can run.
+    // Instead, let it fail when the pool is used and caught by api/index.ts.
 }
 
 // Create a pool regardless, but it will only work if URL is set
