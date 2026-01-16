@@ -10,7 +10,7 @@ import {
     LayoutDashboard, Package, MapPin, LogOut, CheckCircle2, XCircle, Search,
     Trash2, Filter, MoreVertical, Gavel, AlertCircle, Users, Flag, Shield,
     Plus, Download, Menu, Copy, History, ShieldAlert, ShieldCheck, Pencil,
-    ChevronLeft, ChevronRight
+    ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight
 } from "lucide-react";
 import {
     BarChart,
