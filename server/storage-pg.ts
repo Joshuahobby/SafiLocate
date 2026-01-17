@@ -33,7 +33,7 @@ import {
   auditLogs,
   systemSettings,
 } from "../shared/schema.js";
-import { IStorage } from "./storage.js";
+import { IStorage } from "./storage.types.js";
 import { LISTING_DURATION_DAYS, RECEIPT_PREFIXES } from "../shared/constants.js";
 import { matchingService } from "./services/matching.service.js";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";

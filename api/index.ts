@@ -8,35 +8,35 @@ export default async (req: any, res: any) => {
     // 2. Check Critical Env Vars
     const hasDb = !!process.env.DATABASE_URL;
     const hasSession = !!process.env.SESSION_SECRET;
-    
-    console.log(`[Env Check] DATABASE_URL present: ${hasDb}`);
-    console.log(`[Env Check] SESSION_SECRET present: ${hasSession}`);
-    console.log(`[Env Check] NODE_ENV: ${process.env.NODE_ENV}`);
+export default async function (req: VercelRequest, res: VercelResponse) {
+    const requestId = Math.random().toString(36).substring(7);
+    console.log(`[${requestId}] API Handler started: ${req.method} ${req.url}`);
 
-    if (!hasDb || !hasSession) {
-      throw new Error(`Missing Env Vars: DB=${hasDb}, Session=${hasSession}`);
+    try {
+        // Wait for initialization with a timeout
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Initialization timed out after 25s")), 25000)
+        );
+
+        console.log(`[${requestId}] Waiting for server initialization...`);
+        await Promise.race([initPromise, timeoutPromise]);
+        console.log(`[${requestId}] Server initialized successfully.`);
+
+        // Process request
+        return app(req, res);
+    } catch (error: any) {
+        console.error(`[${requestId}] CRITICAL ERROR in API Handler:`, error);
+        
+        // Attempt to send a meaningful error response
+        if (!res.headersSent) {
+            res.status(500).json({
+                error: "Internal Server Error",
+                message: error.message,
+                requestId,
+                phase: "initialization"
+            });
+        }
     }
-
-    // 3. Wait for Server Init
-    console.log("[API] Waiting for server initialization...");
-    await initPromise;
-    console.log("[API] Server ready. Delegating request...");
-
-    return app(req, res);
-  } catch (error: any) {
-    console.error('CRITICAL: Server initialization failed:', error);
-    
-    res.statusCode = 500;
-    res.setHeader('Content-Type', 'application/json');
-    
-    const errorDetails = {
-      error: 'Server initialization failed',
-      message: error instanceof Error ? error.message : String(error),
-      envCheck: {
-        hasDb: !!process.env.DATABASE_URL,
-        hasSession: !!process.env.SESSION_SECRET
-      },
-      stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined, // Safe to show in dev
       timestamp: new Date().toISOString()
     };
 
