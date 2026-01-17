@@ -13,9 +13,9 @@ export const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     // Decrease pool size for serverless/Vercel (effectively 1 per lambda)
     max: process.env.VERCEL || process.env.NODE_ENV === 'production' ? 1 : 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
-    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+    idleTimeoutMillis: 10000, // Shorter idle timeout for serverless
+    connectionTimeoutMillis: 5000, // Fail faster on connection timeout
+    ssl: (process.env.NODE_ENV === "production" || process.env.VERCEL) ? { rejectUnauthorized: false } : undefined,
 });
 
 pool.connect().then(client => {

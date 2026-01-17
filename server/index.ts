@@ -142,15 +142,19 @@ export const initPromise = (async () => {
       // Don't re-throw here on Vercel as it can crash the lambda before logs are flushed
     });
 
-    if (process.env.NODE_ENV === "production" && !process.env.VERCEL) {
-      console.log("3. Production mode: serving static files...");
-      serveStatic(app);
-      console.log("✓ Static files setup.");
-    } else if (process.env.NODE_ENV !== "test") {
-      console.log("3. Development mode: setting up Vite...");
-      const { setupVite } = await import("./vite.js");
-      await setupVite(httpServer, app);
-      console.log("✓ Vite setup complete.");
+    if (!process.env.VERCEL) {
+      if (process.env.NODE_ENV === "production") {
+        console.log("3. Production mode: serving static files...");
+        serveStatic(app);
+        console.log("✓ Static files setup.");
+      } else if (process.env.NODE_ENV !== "test") {
+        console.log("3. Development mode: setting up Vite...");
+        const { setupVite } = await import("./vite.js");
+        await setupVite(httpServer, app);
+        console.log("✓ Vite setup complete.");
+      }
+    } else {
+      console.log("3. Running on Vercel: skipping static/Vite setup.");
     }
 
     const port = parseInt(process.env.PORT || "5000", 10);
