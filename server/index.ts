@@ -142,7 +142,7 @@ export const initPromise = (async () => {
       // Don't re-throw here on Vercel as it can crash the lambda before logs are flushed
     });
 
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" && !process.env.VERCEL) {
       console.log("3. Production mode: serving static files...");
       serveStatic(app);
       console.log("✓ Static files setup.");
