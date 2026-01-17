@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { app, initPromise } from '../server/index.js';
+console.log("Vercel Lambda initialized. Importing server/index.js...");
+
 
 export default async function (req: VercelRequest, res: VercelResponse) {
     const requestId = Math.random().toString(36).substring(7);
@@ -12,8 +14,13 @@ export default async function (req: VercelRequest, res: VercelResponse) {
         );
 
         console.log(`[${requestId}] Status: Waiting for initPromise...`);
-        await Promise.race([initPromise, timeoutPromise]);
-        console.log(`[${requestId}] Status: Init complete.`);
+        try {
+            await Promise.race([initPromise, timeoutPromise]);
+            console.log(`[${requestId}] Status: Init complete.`);
+        } catch (initErr: any) {
+            console.error(`[${requestId}] Status: Init FAILED:`, initErr);
+            throw initErr;
+        }
 
         // Process request
         return app(req, res);
