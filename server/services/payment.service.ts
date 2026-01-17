@@ -1,7 +1,7 @@
 // @ts-ignore
 import Flutterwave from 'flutterwave-node-v3';
 import { storage } from "../storage";
-import { InsertPayment } from "@shared/schema";
+import { InsertPayment } from "../../shared/schema.js";
 import * as fs from 'fs';
 import path from 'path';
 

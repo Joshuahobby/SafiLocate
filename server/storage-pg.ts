@@ -32,9 +32,9 @@ import {
   type SystemSetting,
   auditLogs,
   systemSettings,
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { IStorage } from "./storage.js";
-import { LISTING_DURATION_DAYS, RECEIPT_PREFIXES } from "@shared/constants";
+import { LISTING_DURATION_DAYS, RECEIPT_PREFIXES } from "../shared/constants.js";
 import { matchingService } from "./services/matching.service.js";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";

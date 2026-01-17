@@ -14,7 +14,7 @@ import {
   type AuditLog,
   type InsertAuditLog,
   type SystemSetting,
-} from "@shared/schema";
+} from "../shared/schema.js";
 import session from "express-session";
 import { getPgStorage } from "./storage-pg.js";
 

@@ -4,7 +4,7 @@ import { Express } from "express";
 import session from "express-session";
 import bcrypt from "bcrypt";
 import { storage } from "./storage.js";
-import { User } from "@shared/schema";
+import { User } from "../shared/schema.js";
 import { validatePassword } from "./utils/password-validator.js";
 
 export async function hashPassword(password: string) {
