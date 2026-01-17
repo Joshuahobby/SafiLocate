@@ -17,7 +17,7 @@ class MatchingService {
             const result = await storage.listLostItems({});
             const lostItems = result.items;
             // Filter manually for now as storage might not have advanced filters yet
-            potentialMatches = lostItems.filter(lost =>
+            potentialMatches = lostItems.filter((lost: LostItem) =>
                 lost.status === 'active' && // Only active lost items
                 lost.category === newItem.category // Must match category
             );
@@ -26,14 +26,14 @@ class MatchingService {
         else {
             const result = await storage.listFoundItems({});
             const foundItems = result.items;
-            potentialMatches = foundItems.filter(found =>
+            potentialMatches = foundItems.filter((found: FoundItem) =>
                 found.status === 'active' && // Only active found items
                 found.category === newItem.category // Must match category
             );
         }
 
         // specific matching logic (Tag Overlap)
-        const matches = potentialMatches.map(match => {
+        const matches = potentialMatches.map((match: (FoundItem | LostItem)) => {
             const score = this.calculateMatchScore(newItem, match);
             return { item: match, score };
         })

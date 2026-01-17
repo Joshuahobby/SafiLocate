@@ -339,7 +339,7 @@ export async function registerRoutes(
           limit
         });
 
-        const mappedItems = result.items.map(i => {
+        const mappedItems = result.items.map((i: any) => {
           const isFound = (i as any).type === 'found';
           return {
             ...i,
@@ -349,7 +349,7 @@ export async function registerRoutes(
         });
 
         const sanitizedItems = await Promise.all(
-          mappedItems.map(i => sanitizeItem(i, (req as any).user))
+          mappedItems.map((i: any) => sanitizeItem(i, (req as any).user))
         );
         return res.json(sanitizedItems);
       }
@@ -366,7 +366,7 @@ export async function registerRoutes(
           page,
           limit
         });
-        foundItems = result.items.map(i => ({
+        foundItems = result.items.map((i: any) => ({
           ...i,
           type: "found" as const,
           date: i.dateFound,
@@ -383,7 +383,7 @@ export async function registerRoutes(
           page,
           limit
         });
-        lostItems = result.items.map(i => ({
+        lostItems = result.items.map((i: any) => ({
           ...i,
           type: "lost" as const,
           date: i.dateLost,
@@ -599,7 +599,7 @@ export async function registerRoutes(
           startDate,
           endDate
         });
-        foundItems = result.items.map(i => ({
+        foundItems = result.items.map((i: any) => ({
           ...i,
           type: "found" as const,
           date: i.dateFound,
@@ -619,7 +619,7 @@ export async function registerRoutes(
           startDate,
           endDate
         });
-        lostItems = result.items.map(i => ({
+        lostItems = result.items.map((i: any) => ({
           ...i,
           type: "lost" as const,
           date: i.dateLost,
@@ -811,7 +811,7 @@ export async function registerRoutes(
 
       const logs = await storage.getLatestAuditLogs({ adminId, action, dateFrom, dateTo, limit });
       // Fetch admin usernames for the logs to display names instead of IDs
-      const populatedLogs = await Promise.all(logs.map(async (log) => {
+      const populatedLogs = await Promise.all(logs.map(async (log: any) => {
         const admin = await storage.getUser(log.adminId);
         return {
           ...log,
@@ -830,7 +830,7 @@ export async function registerRoutes(
     try {
       const settings = await storage.getSettings();
       // Transform to object for easier frontend consumption
-      const settingsObj = settings.reduce((acc, curr) => {
+      const settingsObj = settings.reduce((acc: any, curr: any) => {
         acc[curr.key] = curr.value;
         return acc;
       }, {} as Record<string, string>);

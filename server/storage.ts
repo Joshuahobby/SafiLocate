@@ -16,7 +16,7 @@ import {
   type SystemSetting,
 } from "@shared/schema";
 import session from "express-session";
-import { pgStorage } from "./storage-pg";
+import { getPgStorage } from "./storage-pg";
 
 export interface IStorage {
   sessionStore: session.Store;
