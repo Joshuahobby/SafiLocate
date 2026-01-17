@@ -1,4 +1,4 @@
-import { storage } from "../storage";
+import { storage } from "../storage.js";
 import { type FoundItem, type LostItem } from "@shared/schema";
 
 class MatchingService {

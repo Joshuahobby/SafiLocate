@@ -1,14 +1,14 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import { insertFoundItemSchema, insertLostItemSchema, insertClaimSchema, type FoundItem, type LostItem, type User } from "@shared/schema";
-import { paymentRoutes } from "./routes/payment";
-import { uploadRoutes } from "./routes/upload";
-import { imageService } from "./services/image.service";
-import { aiService } from "./services/ai.service";
-import { matchingService } from "./services/matching.service";
-import { notificationService } from "./services/notification.service";
-import { hashPassword } from "./auth";
+import { paymentRoutes } from "./routes/payment.js";
+import { uploadRoutes } from "./routes/upload.js";
+import { imageService } from "./services/image.service.js";
+import { aiService } from "./services/ai.service.js";
+import { matchingService } from "./services/matching.service.js";
+import { notificationService } from "./services/notification.service.js";
+import { hashPassword } from "./auth.js";
 
 export async function registerRoutes(
   httpServer: Server,

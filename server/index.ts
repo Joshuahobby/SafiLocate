@@ -1,11 +1,11 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { serveStatic } from "./static";
+import { registerRoutes } from "./routes.js";
+import { serveStatic } from "./static.js";
 import { createServer } from "http";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import { sanitizeInputs } from "./middleware/sanitize";
+import { sanitizeInputs } from "./middleware/sanitize.js";
 
 export const app = express();
 const httpServer = createServer(app);
@@ -109,7 +109,7 @@ app.use((req, res, next) => {
   next();
 });
 
-import { setupAuth } from "./auth";
+import { setupAuth } from "./auth.js";
 
 // Export the initialization promise so tests can wait for it
 export const initPromise = (async () => {
@@ -148,7 +148,7 @@ export const initPromise = (async () => {
       console.log("✓ Static files setup.");
     } else if (process.env.NODE_ENV !== "test") {
       console.log("3. Development mode: setting up Vite...");
-      const { setupVite } = await import("./vite");
+      const { setupVite } = await import("./vite.js");
       await setupVite(httpServer, app);
       console.log("✓ Vite setup complete.");
     }

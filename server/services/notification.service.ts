@@ -1,4 +1,4 @@
-import { storage } from "../storage";
+import { storage } from "../storage.js";
 import { User, InsertClaim, FoundItem, LostItem } from "@shared/schema";
 
 interface EmailOptions {

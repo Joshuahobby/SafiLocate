@@ -1,4 +1,4 @@
-import { app, initPromise } from '../server/index';
+import { app, initPromise } from '../server/index.js';
 
 export default async (req: any, res: any) => {
   try {

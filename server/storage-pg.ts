@@ -33,9 +33,9 @@ import {
   auditLogs,
   systemSettings,
 } from "@shared/schema";
-import { IStorage } from "./storage";
+import { IStorage } from "./storage.js";
 import { LISTING_DURATION_DAYS, RECEIPT_PREFIXES } from "@shared/constants";
-import { matchingService } from "./services/matching.service";
+import { matchingService } from "./services/matching.service.js";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 
@@ -43,7 +43,7 @@ if (!process.env.DATABASE_URL) {
   console.error("DATABASE_URL environment variable is required");
 }
 
-import { pool, db } from "./db";
+import { pool, db } from "./db.js";
 
 import session from "express-session";
 import connectPg from "connect-pg-simple";

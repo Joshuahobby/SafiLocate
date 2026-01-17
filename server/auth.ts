@@ -3,9 +3,9 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
 import bcrypt from "bcrypt";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import { User } from "@shared/schema";
-import { validatePassword } from "./utils/password-validator";
+import { validatePassword } from "./utils/password-validator.js";
 
 export async function hashPassword(password: string) {
     return await bcrypt.hash(password, 10);
