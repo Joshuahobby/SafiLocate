@@ -35,7 +35,7 @@ import {
 } from "../shared/schema.js";
 import { IStorage } from "./storage.types.js";
 import { LISTING_DURATION_DAYS, RECEIPT_PREFIXES } from "../shared/constants.js";
-import { matchingService } from "./services/matching.service.js";
+// import { matchingService } from "./services/matching.service.js"; // Removed to break circularity
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 
@@ -968,6 +968,7 @@ export class PgStorage implements IStorage {
   }
 
   async getUserMatches(userId: string) {
+    const { matchingService } = await import("./services/matching.service.js");
     const userLostItems = await db.select().from(lostItems).where(and(eq(lostItems.seekerId, userId), eq(lostItems.status, "active")));
     const allMatches = [];
 

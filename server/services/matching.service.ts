@@ -1,4 +1,4 @@
-import { storage } from "../storage.js";
+import { getStorage } from "../storage.js";
 import { type FoundItem, type LostItem } from "../../shared/schema.js";
 
 class MatchingService {
@@ -8,6 +8,7 @@ class MatchingService {
      * @param type The type of the new item ('found' or 'lost')
      */
     async findPotentialMatches(newItem: FoundItem | LostItem, type: 'found' | 'lost') {
+        const storage = getStorage();
         console.log(`[MatchingService] Searching for matches for ${type} item: ${newItem.title} (${newItem.id})`);
 
         let potentialMatches: (FoundItem | LostItem)[] = [];

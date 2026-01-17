@@ -1,4 +1,4 @@
-import { storage } from "../storage.js";
+import { getStorage } from "../storage.js";
 import { User, InsertClaim, FoundItem, LostItem } from "../../shared/schema.js";
 
 interface EmailOptions {
@@ -44,6 +44,7 @@ class NotificationService {
      * Notify the item owner (finder/seeker) that a new claim has been submitted.
      */
     async notifyItemOwnerOfClaim(claim: any, item: FoundItem | LostItem, claimerId: string) {
+        const storage = getStorage();
         try {
             // Determine owner ID
             const ownerId = 'finderId' in item ? item.finderId : item.seekerId;
@@ -84,6 +85,7 @@ class NotificationService {
      * Notify the claimant that their claim status has been updated.
      */
     async notifyClaimantOfStatusChange(claim: any, item: FoundItem | LostItem, status: string) {
+        const storage = getStorage();
         try {
             const claimant = await storage.getUser(claim.userId);
             if (!claimant) return;

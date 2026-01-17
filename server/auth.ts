@@ -3,7 +3,8 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
 import bcrypt from "bcrypt";
-import { storage } from "./storage.js";
+import { getStorage } from "./storage.js";
+const storage = getStorage();
 import { User } from "../shared/schema.js";
 import { validatePassword } from "./utils/password-validator.js";
 

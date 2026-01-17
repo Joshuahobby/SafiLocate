@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage.js";
+import { getStorage } from "./storage.js";
+const storage = getStorage();
 import { insertFoundItemSchema, insertLostItemSchema, insertClaimSchema, type FoundItem, type LostItem, type User } from "../shared/schema.js";
 import { paymentRoutes } from "./routes/payment.js";
 import { uploadRoutes } from "./routes/upload.js";
