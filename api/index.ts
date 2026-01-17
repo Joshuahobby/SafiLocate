@@ -1,13 +1,20 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { app, initPromise } from '../server/index.js';
-console.log("Vercel Lambda initialized. Importing server/index.js...");
 
+console.log(">>> Lambda Script Global Scope Loaded <<<");
 
 export default async function (req: VercelRequest, res: VercelResponse) {
     const requestId = Math.random().toString(36).substring(7);
-    console.log(`[${requestId}] API Request: ${req.method} ${req.url}`);
+    const timestamp = new Date().toISOString();
+    
+    console.log(`[${requestId}] [${timestamp}] >>> HANDLER START: ${req.method} ${req.url} <<<`);
+    console.log(`[${requestId}] Environment: VERCEL=${process.env.VERCEL}, NODE_ENV=${process.env.NODE_ENV}`);
 
     try {
+        console.log(`[${requestId}] Status: Dynamically importing ../server/index.js...`);
+        // Dynamic import to prevent top-level module evaluation crashes from hiding logs
+        const { app, initPromise } = await import('../server/index.js');
+        console.log(`[${requestId}] Status: Import successful.`);
+
         // Wait for initialization with a timeout
         const timeoutPromise = new Promise((_, reject) => 
             setTimeout(() => reject(new Error("Initialization timed out after 25s")), 25000)
@@ -23,16 +30,20 @@ export default async function (req: VercelRequest, res: VercelResponse) {
         }
 
         // Process request
+        console.log(`[${requestId}] Status: Passing request to Express app...`);
         return app(req, res);
     } catch (error: any) {
-        console.error(`[${requestId}] CRITICAL ERROR:`, error);
+        console.error(`[${requestId}] CRITICAL ERROR IN HANDLER:`, error);
+        console.error(`[${requestId}] Error Name:`, error?.name);
+        console.error(`[${requestId}] Error Message:`, error?.message);
+        console.error(`[${requestId}] Stack:`, error?.stack);
         
         if (!res.headersSent) {
             res.status(500).json({
-                error: "Internal Server Error",
+                error: "Lambda Handler Error",
                 message: error.message,
                 requestId,
-                phase: "initialization",
+                phase: "warmup/execution",
                 timestamp: new Date().toISOString()
             });
         }
