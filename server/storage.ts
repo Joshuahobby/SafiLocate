@@ -145,4 +145,4 @@ export interface IStorage {
   updateSetting(key: string, value: string): Promise<SystemSetting>;
 }
 
-export const storage = pgStorage;
+export const storage = getPgStorage();

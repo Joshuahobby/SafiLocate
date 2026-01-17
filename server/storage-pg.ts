@@ -48,15 +48,28 @@ import { pool, db } from "./db";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 const PgSessionStore = connectPg(session);
+import createMemoryStore from "memorystore";
+const MemoryStore = createMemoryStore(session);
 
 export class PgStorage implements IStorage {
   public sessionStore: session.Store;
 
   constructor() {
-    this.sessionStore = new PgSessionStore({
-      pool,
-      createTableIfMissing: true,
-    });
+    try {
+      console.log("Initializing PgSessionStore...");
+      this.sessionStore = new PgSessionStore({
+        pool,
+        createTableIfMissing: true,
+      });
+      console.log("✓ PgSessionStore initialized.");
+    } catch (error) {
+      console.error("!!! FAILED TO INITIALIZE PgSessionStore !!!", error);
+      // Fallback to memory store if database is unavailable to prevent crash
+      console.warn("Falling back to MemoryStore for sessions.");
+      this.sessionStore = new MemoryStore({
+          checkPeriod: 86400000 // prune expired entries every 24h
+      });
+    }
   }
   // ============ Users ============
   async getUser(id: string): Promise<User | undefined> {
@@ -1010,5 +1023,15 @@ export class PgStorage implements IStorage {
   }
 }
 
-// Export singleton instance
-export const pgStorage = new PgStorage();
+// Lazy singleton instance to prevent top-level module evaluation crashes
+let _pgStorage: PgStorage | null = null;
+export function getPgStorage(): PgStorage {
+  if (!_pgStorage) {
+    console.log("Instantiating PgStorage singleton...");
+    _pgStorage = new PgStorage();
+  }
+  return _pgStorage;
+}
+
+// For backward compatibility while refactoring
+export const pgStorage = null as any; 
