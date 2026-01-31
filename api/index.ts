@@ -42,9 +42,14 @@ export default async function (req: VercelRequest, res: VercelResponse) {
             res.status(500).json({
                 error: "Lambda Handler Error",
                 message: error.message,
+                diagnostics: {
+                    hasDb: !!process.env.DATABASE_URL,
+                    hasSecret: !!process.env.SESSION_SECRET,
+                    nodeEnv: process.env.NODE_ENV,
+                    timestamp: new Date().toISOString()
+                },
                 requestId,
-                phase: "warmup/execution",
-                timestamp: new Date().toISOString()
+                phase: "warmup/execution"
             });
         }
     }
